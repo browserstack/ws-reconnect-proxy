@@ -6,11 +6,22 @@ const util = require('util');
 const sleep = util.promisify(setTimeout);
 
 const Queue = require('./queue');
+const constants = require('./constants');
+
+async function* retries(retryLimit, timeout) {
+  for (let idx = 0; idx < retryLimit; idx++) {
+    yield(idx);
+    await sleep(timeout);
+  }
+}
 
 class StatefulWSProxy {
   start(options) {
     this.server = new WebSocket.Server({ port: options.port });
     this.target = this.getUrl(options.target);
+    this.retryLimit = options.retryLimit || constants.RETRY_LIMIT;
+    this.retryTimeout = options.retryTimeout || constants.RETRY_TIMEOUT;
+    this.initialRetryDelay = options.initialRetryDelay || constants.INITIAL_RETRY_DELAY;
     this.proxyData = {};
     this.startListeners();
   }
@@ -27,22 +38,56 @@ class StatefulWSProxy {
     return url.parse(reqUrl, true).search;
   }
 
-  checkServer(ws, target)  {
-    if(this.proxyData[ws.id].serverReady) {
-      return;
-    }
+  async connect(wsId, target) {
     const newWS = new WebSocket(target);
-    newWS.on('error', () => {
-      logger.info('Trying to establish ws connection with server');
-    })
-    newWS.on('open', () => {
-      logger.info('ws connection formed with server');
-      this.proxyData[ws.id].serverWS = newWS;
-
-      this.addServerListeners(ws, this.proxyData[ws.id].serverWS, target);
-      this.proxyData[ws.id].serverReady = true;
-      this.tryPendingReq(ws.id);
+    let pres;
+    const fp = () => new Promise(res => {
+      pres = res;
     });
+    let serverUp = false;
+    newWS.on('error', () => {
+      pres();
+    });
+    newWS.on('open', () => {
+      pres();
+      this.proxyData[wsId].serverWS = newWS;
+      serverUp = true;
+    });
+    await fp();
+    return serverUp;
+  }
+  
+  connetToUpstream(wsId, target) {
+    return new Promise(async (res, rej) => {
+      for await (const idx of retries(this.retryLimit, this.retryTimeout)) {
+        const result = await this.connect(wsId, target);
+        if (result) {
+          return res();
+        } else {
+          logger.info(
+            `Trying to form ws connection with server, retry count: ${idx}`
+          );
+        }
+      }
+      return rej();
+    });
+  }
+
+  serverWsConnectionHandler(ws) {
+    this.connetToUpstream(ws.id, this.proxyData[ws.id].targetEndpoint)
+      .then(() => {
+        logger.info('ws connection established with server');
+        this.addServerListeners(
+          ws, 
+          this.proxyData[ws.id].serverWS, 
+          this.proxyData[ws.id].targetEndpoint
+        );
+        this.proxyData[ws.id].serverReady = true;
+        this.tryPendingReq(ws.id);
+      })
+      .catch(() => {
+        logger.info('Unable to connect to server');
+      });
   }
 
   addServerListeners(clientWs, serverWs, target) {
@@ -63,14 +108,11 @@ class StatefulWSProxy {
       }
     });
 
-    serverWs.on('disconnect', (data) => {
+    serverWs.on('disconnect', async (data) => {
       this.targetServerReady = false;
       this.serverReconnectionInfo[clientWs.id] = { ...data };
-      setTimeout(() => {
-        setInterval(() => {
-          this.checkServer(clientWs, target);
-        }, 500);
-      }, 1000);
+      await sleep(this.initialRetryDelay);
+      this.serverWsConnectionHandler(clientWs);
     });
   }
 
@@ -108,15 +150,12 @@ class StatefulWSProxy {
       }
 
       logger.info('new client connection');
-      ws.heartbeatPing = setInterval(() => sendHeartbeatPing(ws), 30000);
+      ws.heartbeatPing = setInterval(() => this.sendHeartbeatPing(ws), 30000);
 
-      const checkServerTimer = setInterval(() => {
-        this.checkServer(ws, this.proxyData[ws.id].targetEndpoint, ws.id);
-      }, 1000);
+      this.serverWsConnectionHandler(ws);
     
       ws.on('message', (data) => {
         if (this.proxyData[ws.id].serverReady) {
-          clearInterval(checkServerTimer);
           while (!this.proxyData[ws.id].pendingClientData.isEmpty()) {
             this.proxyData[ws.id].serverWS.send(
               this.proxyData[ws.id].pendingClientData.dequeue()
@@ -136,7 +175,6 @@ class StatefulWSProxy {
       ws.on('close', (code) => {
         logger.info(`Socket closed with ${code}`);
         clearInterval(ws.heartbeatPing);
-        clearInterval(checkServerTimer);
         this.proxyData[ws.id].serverWS.close();
         delete(this.proxyData[ws.id]);
       });

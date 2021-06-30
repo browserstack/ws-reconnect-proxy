@@ -1,0 +1,3 @@
+exports.RETRY_LIMIT = 20;
+exports.RETRY_TIMEOUT = 500;
+exports.INITIAL_RETRY_DELAY = 1000;
