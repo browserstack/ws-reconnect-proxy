@@ -15,8 +15,17 @@ async function* retries(retryLimit, timeout) {
   }
 }
 
-class StatefulWSProxy {
+class WsReconnectProxy {
   start(options) {
+    if (!options.port) {
+      throw new Error('No "port" passed in options!');
+    }
+    if (!options.target) {
+      throw new Error('No "target" passed in options!');
+    }
+    if (!options.target.url && (!options.target.port || !options.target.host)) {
+      throw new Error('"target" does not required properties!');
+    }
     this.server = new WebSocket.Server({ port: options.port });
     this.target = this.getUrl(options.target);
     this.retryLimit = options.retryLimit || constants.RETRY_LIMIT;
@@ -27,10 +36,10 @@ class StatefulWSProxy {
   }
 
   getUrl(target) {
-    if(target.hasOwnProperty('port')) {
-      return `ws://${target.host}:${target.port}`;
-    } else {
+    if(target.hasOwnProperty('url')) {
       return target.url;
+    } else {
+      return `ws://${target.host}:${target.port}`;
     }
   }
 
@@ -182,4 +191,4 @@ class StatefulWSProxy {
   }
 }
 
-module.exports = StatefulWSProxy;
+module.exports = WsReconnectProxy;
