@@ -11,9 +11,7 @@ class StatefulWSProxy {
   start(options) {
     this.server = new WebSocket.Server({ port: options.port });
     this.target = this.getUrl(options.target);
-    this.pendingReqData = {};
-    this.wsData = {};
-    this.serverReconnectionInfo = {};
+    this.proxyData = {};
     this.startListeners();
   }
 
@@ -25,26 +23,25 @@ class StatefulWSProxy {
     }
   }
 
-  setQueryString(reqUrl, wsId) {
-    const query = url.parse(reqUrl, true).search;
-    this.wsData[wsId].queryString = query;
+  getQueryString(reqUrl) {
+    return url.parse(reqUrl, true).search;
   }
 
-  checkServer(ws, target, timer)  {
-    if(this.targetServerReady) {
-      clearInterval(timer);
+  checkServer(ws, target)  {
+    if(this.proxyData[ws.id].serverReady) {
       return;
     }
     const newWS = new WebSocket(target);
-    newWS.on('error', () => {})
+    newWS.on('error', () => {
+      logger.info('Trying to establish ws connection with server');
+    })
     newWS.on('open', () => {
       logger.info('ws connection formed with server');
-      this.wsData[ws.id].serverWS = newWS;
+      this.proxyData[ws.id].serverWS = newWS;
 
-      this.addServerListeners(ws, this.wsData[ws.id].serverWS, target);
-      clearInterval(timer);
-      this.targetServerReady = true;
-      tryPendingReq(ws.id);
+      this.addServerListeners(ws, this.proxyData[ws.id].serverWS, target);
+      this.proxyData[ws.id].serverReady = true;
+      this.tryPendingReq(ws.id);
     });
   }
 
@@ -54,27 +51,36 @@ class StatefulWSProxy {
     });
   
     serverWs.on('message', (data) => {
-      clientWs.send(data);
+      if (this.proxyData[clientWs.id].clientReady) {
+        while (!this.proxyData[clientWs.id].pendingServerData.isEmpty()) {
+          clientWs.send(
+            this.proxyData[clientWs.id].pendingServerData.dequeue()
+          );
+        }
+        clientWs.send(data);
+      } else {
+        this.proxyData[clientWs.id].pendingServerData.enque(data);
+      }
     });
 
     serverWs.on('disconnect', (data) => {
       this.targetServerReady = false;
       this.serverReconnectionInfo[clientWs.id] = { ...data };
       setTimeout(() => {
-        const checkServerTimer = setInterval(() => {
-          this.checkServer(clientWs, target, checkServerTimer);
+        setInterval(() => {
+          this.checkServer(clientWs, target);
         }, 500);
       }, 1000);
     });
   }
 
   tryPendingReq(wsId) {
-    if (!this.wsData[wsId].serverWS || 
-      this.wsData[wsId].serverWS.readyState !== WebSocket.OPEN) return;
+    if (!this.proxyData[wsId].serverWS || 
+      this.proxyData[wsId].serverWS.readyState !== WebSocket.OPEN) return;
 
-    while (!this.pendingReqData[wsId].isEmpty()) {
-      this.wsData[wsId].serverWS.send(
-        this.pendingReqData[wsId].dequeue()
+    while (!this.proxyData[wsId].pendingClientData.isEmpty()) {
+      this.proxyData[wsId].serverWS.send(
+        this.proxyData[wsId].pendingClientData.dequeue()
       );
     }
   }
@@ -90,39 +96,49 @@ class StatefulWSProxy {
 
   startListeners() {
     this.server.on('connection', (ws, req) => {
-      this.targetServerReady = false;
       ws.id = uuidv4();
-      this.wsData[ws.id] = {};
-      this.pendingReqData[ws.id] = new Queue();
+      this.proxyData[ws.id] = {
+        serverReady: false,
+        clientReady: true,
+        pendingClientData: new Queue(),
+        pendingServerData: new Queue(),
+        clientReconnectInfo: null,
+        serverReconnectInfo: null,
+        targetEndpoint: `${this.target}${this.getQueryString(req.url)}`,
+      }
+
       logger.info('new client connection');
       ws.heartbeatPing = setInterval(() => sendHeartbeatPing(ws), 30000);
 
-      this.setQueryString(req.url, ws.id);
-      
-      const targetEndpoint = `${this.target}${this.wsData[ws.id].queryString}`;
       const checkServerTimer = setInterval(() => {
-        this.checkServer(ws, targetEndpoint, ws.id, checkServerTimer);
-      }, 500);
+        this.checkServer(ws, this.proxyData[ws.id].targetEndpoint, ws.id);
+      }, 1000);
     
-      ws.on('message', async (data) => {
-        if (this.targetServerReady) {
-          while (!this.pendingReqData[ws.id].isEmpty()) {
-            this.wsData[ws.id].serverWS.send(
-              this.pendingReqData[ws.id].dequeue()
+      ws.on('message', (data) => {
+        if (this.proxyData[ws.id].serverReady) {
+          clearInterval(checkServerTimer);
+          while (!this.proxyData[ws.id].pendingClientData.isEmpty()) {
+            this.proxyData[ws.id].serverWS.send(
+              this.proxyData[ws.id].pendingClientData.dequeue()
             );
           }
-          this.wsData[ws.id].serverWS.send(data);
+          this.proxyData[ws.id].serverWS.send(data);
         } else {
-          this.pendingReqData[ws.id].enque(data)
+          this.proxyData[ws.id].pendingClientData.enque(data);
         }
+      });
+
+      ws.on('disconnect', (data) => {
+        this.proxyData[ws.id].clientReady = false;
+        this.proxyData[ws.id].clientReconnectInfo = { ...data };
       });
     
       ws.on('close', (code) => {
         logger.info(`Socket closed with ${code}`);
         clearInterval(ws.heartbeatPing);
-        this.wsData[ws.id].serverWS.close();
-        delete(this.wsData[ws.id]);
-        delete(this.pendingReqData[ws.id]);
+        clearInterval(checkServerTimer);
+        this.proxyData[ws.id].serverWS.close();
+        delete(this.proxyData[ws.id]);
       });
     });
   }
