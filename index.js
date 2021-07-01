@@ -92,7 +92,7 @@ class WsReconnectProxy {
           this.proxyData[ws.id].targetEndpoint
         );
         this.proxyData[ws.id].serverReady = true;
-        this.tryPendingReq(ws.id);
+        this.tryPendingClientReq(ws.id);
       })
       .catch(() => {
         logger.info('Unable to connect to server');
@@ -119,19 +119,29 @@ class WsReconnectProxy {
 
     serverWs.on('disconnect', async (data) => {
       this.targetServerReady = false;
-      this.serverReconnectionInfo[clientWs.id] = { ...data };
+      this.proxyData[ws.id].serverReconnectInfo = { ...data };
       await sleep(this.initialRetryDelay);
       this.serverWsConnectionHandler(clientWs);
     });
   }
 
-  tryPendingReq(wsId) {
+  tryPendingClientReq(wsId) {
     if (!this.proxyData[wsId].serverWS || 
       this.proxyData[wsId].serverWS.readyState !== WebSocket.OPEN) return;
 
     while (!this.proxyData[wsId].pendingClientData.isEmpty()) {
       this.proxyData[wsId].serverWS.send(
         this.proxyData[wsId].pendingClientData.dequeue()
+      );
+    }
+  }
+
+  tryPendingServerData(ws) {
+    if (ws.readyState !== WebSocket.OPEN) return;
+
+    while (!this.proxyData[ws.id].pendingServerData.isEmpty()) {
+      ws.send(
+        this.proxyData[ws.id].pendingServerData.dequeue()
       );
     }
   }
@@ -145,17 +155,30 @@ class WsReconnectProxy {
     }
   }
 
+  checkForClientReconnection(req) {
+    const reconnectInfo =  url.parse(req.url, true).query.reconnectInfo;
+    return reconnectInfo ? JSON.parse(reconnectInfo) : null;
+  }
+
   startListeners() {
     this.server.on('connection', (ws, req) => {
-      ws.id = uuidv4();
-      this.proxyData[ws.id] = {
-        serverReady: false,
-        clientReady: true,
-        pendingClientData: new Queue(),
-        pendingServerData: new Queue(),
-        clientReconnectInfo: null,
-        serverReconnectInfo: null,
-        targetEndpoint: `${this.target}${this.getQueryString(req.url)}`,
+      const reconnectionData = this.checkForClientReconnection(req);
+      if(reconnectionData) {
+        ws.id = reconnectionData.id;
+        this.proxyData[ws.id].clientReady = true;
+        this.tryPendingServerData(ws);
+        this.proxyData[ws.id].clientReconnectInfo = null;
+      } else {
+        ws.id = uuidv4();
+        this.proxyData[ws.id] = {
+          serverReady: false,
+          clientReady: true,
+          pendingClientData: new Queue(),
+          pendingServerData: new Queue(),
+          clientReconnectInfo: null,
+          serverReconnectInfo: null,
+          targetEndpoint: `${this.target}${this.getQueryString(req.url)}`,
+        }
       }
 
       logger.info('new client connection');
@@ -184,8 +207,10 @@ class WsReconnectProxy {
       ws.on('close', (code) => {
         logger.info(`Socket closed with ${code}`);
         clearInterval(ws.heartbeatPing);
-        this.proxyData[ws.id].serverWS.close();
-        delete(this.proxyData[ws.id]);
+        if (!this.proxyData.clientReconnectInfo) {
+          this.proxyData[ws.id].serverWS.close();
+          delete(this.proxyData[ws.id]);
+        }
       });
     });
   }
