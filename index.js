@@ -59,6 +59,7 @@ class WsReconnectProxy {
     });
     newWS.on('open', () => {
       pres();
+      newWS.id = uuidv4();
       this.proxyData[wsId].serverWS = newWS;
       serverUp = true;
     });
@@ -99,9 +100,15 @@ class WsReconnectProxy {
       });
   }
 
-  addServerListeners(clientWs, serverWs, target) {
+  addServerListeners(clientWs, serverWs) {
+    serverWs.heartbeatPing = setInterval(() => 
+      this.sendHeartbeatPing(serverWs), 
+      constants.PING_INTERVAL
+    );
+
     serverWs.on('close', (code) => {
       logger.info(`Server ws closed with code: ${code}`);
+      clearInterval(serverWs.heartbeatPing);
     });
   
     serverWs.on('message', (data) => {
@@ -151,7 +158,7 @@ class WsReconnectProxy {
       logger.info(`Sending ping for ${ws.id}`);
       ws.ping();
     } catch (error) {
-      logger.info(`${ws.id} client already disconnected`);
+      logger.info(`${ws.id} already disconnected`);
     }
   }
 
@@ -182,7 +189,10 @@ class WsReconnectProxy {
       }
 
       logger.info('new client connection');
-      ws.heartbeatPing = setInterval(() => this.sendHeartbeatPing(ws), 30000);
+      ws.heartbeatPing = setInterval(() => 
+        this.sendHeartbeatPing(ws), 
+        constants.PING_INTERVAL
+      );
 
       this.serverWsConnectionHandler(ws);
     
@@ -203,9 +213,13 @@ class WsReconnectProxy {
         this.proxyData[ws.id].clientReady = false;
         this.proxyData[ws.id].clientReconnectInfo = { ...data };
       });
+
+      ws.on('pong', () => {
+        logger.info(`Received pong for : ${ws.id}`);
+      });
     
       ws.on('close', (code) => {
-        logger.info(`Socket closed with ${code}`);
+        logger.info(`Client ws closed with ${code}`);
         clearInterval(ws.heartbeatPing);
         if (!this.proxyData.clientReconnectInfo) {
           this.proxyData[ws.id].serverWS.close();
