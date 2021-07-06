@@ -1,9 +1,11 @@
+'use strict';
+
 class Queue {
   constructor() {
     this.list = [];
   }
 
-  enque(data) {
+  enqueue(data) {
     this.list.push(data);
   }
 
@@ -19,7 +21,7 @@ class Queue {
   }
 
   isEmpty() {
-    return this.size() == 0;
+    return this.size() === 0;
   }
 }
 
