@@ -14,21 +14,25 @@ class Sender {
     this.upstreamWait = new Map();
     this.upstreams = new Map();
     this.msgQueue = new Map();
-    logger.info(`Server started on port ${config.port}`);
+    logger.info(`Server started in sender mode on port ${config.port}`);
   }
 
   createUpstream(socket) {
     this.upstreamWait.set(socket.id, true);
-    const resolveFn = () => {
+    const resolveFn = this.enableUpstream(socket).bind(this);
+    const upstream = Upstream.createSocket(config.upstream, socket.id, resolveFn);
+    this.addUpstreamEvents(socket, upstream);
+    this.upstreams.set(socket.id, upstream);
+  }
+
+  enableUpstream(socket) {
+    return () => {
       const list = this.msgQueue.get(socket.id);
       while (!list.isEmpty()) {
         this.forwardUpstream(socket.id, list.dequeue());
       }
       this.upstreamWait.set(socket.id, false);
     };
-    const upstream = Upstream.createSocket(config.upstream, socket.id, resolveFn);
-    this.addUpstreamEvents(socket, upstream);
-    this.upstreams.set(socket.id, upstream);
   }
 
   addUpstreamEvents(socket, upstream) {
@@ -37,15 +41,8 @@ class Sender {
     });
 
     upstream.on(kUpstreamClosed, () => {
-      const resolveFn = () => {
-        const list = this.msgQueue.get(socket.id);
-        while (!list.isEmpty()) {
-          this.forwardUpstream(socket.id, list.dequeue());
-        }
-        this.upstreamWait.set(socket.id, false);
-      };
       this.upstreamWait.set(socket.id, true);
-      upstream.startRetries(resolveFn);
+      upstream.startRetries(this.enableUpstream(socket).bind(this));
     });
   }
 

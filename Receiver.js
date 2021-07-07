@@ -27,6 +27,9 @@ class Receiver {
         });
       }
     });
+    this.upstream.on('error', (err) => {
+      logger.info(`Received error on upstream socket in receiver mode: ${err}`);
+    });
     logger.info(`Server started on port ${config.port}`);
   }
 

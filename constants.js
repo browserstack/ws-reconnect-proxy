@@ -77,11 +77,19 @@ class ConfigParser {
     return this;
   }
 
-  setSenderUpstream() {
-    if (this.state !== kSender) {
-      logger.info('Not in sender mode so not using sender upstream');
-      return this;
+  setWorkers() {
+    const { workers } = config;
+    let workerVal = 2;
+    if (typeof workers !== 'number') {
+      logger.error('Unvalid workers defined using default (2)');
+    } else {
+      workerVal = workers;
     }
+    this.workerVal = workerVal;
+    return this;
+  }
+
+  setSenderUpstream() {
     this.upstream = config.upstream;
     return this;
   }
@@ -106,6 +114,7 @@ const configParser = (new ConfigParser())
   .setupRetries()
   .setupRetryDelay()
   .setPort()
+  .setWorkers()
   .setSenderUpstream();
 
 module.exports = {

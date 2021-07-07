@@ -1,0 +1,5 @@
+{
+  "workers": 3,
+  "executionMode": 0,
+  "upstream": "ws://localhost:8082"
+}
