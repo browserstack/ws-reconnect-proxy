@@ -10,7 +10,7 @@ const Queue = require('./queue.js');
 class Sender {
   constructor() {
     this.server = new WebSocket.Server({ port: config.port });
-    this.handleIncoming();
+    this.server.on('connection', this.handleIncoming.bind(this));
     this.upstreamWait = new Map();
     this.upstreams = new Map();
     this.msgQueue = new Map();
@@ -46,27 +46,39 @@ class Sender {
     });
   }
 
-  handleIncoming() {
-    this.server.on('connection', ws => {
-      ws.id = uuidv4();
-      logger.info(`Received incoming connection: ${ws.id}`);
-      this.createUpstream(ws);
-      const list = new Queue();
-      this.msgQueue.set(ws.id, list);
-      ws.on('message', (msg) => {
-        logger.debug(`Received ${msg} on ${ws.id}`);
-        if (this.upstreamWait.get(ws.id)) {
-          list.enqueue(msg);
-        } else {
-          this.forwardUpstream(ws.id, msg);
-        }
-      });
-      ws.on('close', (code, msg) => {
-        logger.info(`Received close for ${ws.id} with code: ${code} and msg: ${msg}`);
-        if (this.upstreams.has(ws.id)) {
-          this.upstreams.get(ws.id).close(code, msg);
-        }
-      });
+  handleIncoming(ws) {
+    ws.id = uuidv4();
+    logger.info(`Received incoming connection: ${ws.id}`);
+    this.createUpstream(ws);
+    const list = new Queue();
+    // This is added because if nothing is written on the socket in some time
+    // it will lead to socket end through proxy.
+    ws.pingInterval = setInterval(() => ws.ping(), 40000);
+
+    ws.on('pong', () => {
+      logger.debug(`Received pong on the socket: ${ws.id}`);
+    });
+
+    this.msgQueue.set(ws.id, list);
+
+    ws.on('message', (msg) => {
+      logger.debug(`Received ${msg} on ${ws.id}`);
+      if (this.upstreamWait.get(ws.id)) {
+        list.enqueue(msg);
+      } else {
+        this.forwardUpstream(ws.id, msg);
+      }
+    });
+
+    ws.on('close', (code, msg) => {
+      if (ws.pingInterval) {
+        logger.debug(`Clearing the debug interval for ${ws.id}`);
+        clearImmediate(ws.pingInterval);
+      }
+      logger.info(`Received close for ${ws.id} with code: ${code} and msg: ${msg}`);
+      if (this.upstreams.has(ws.id)) {
+        this.upstreams.get(ws.id).close(code, msg);
+      }
     });
   }
 
