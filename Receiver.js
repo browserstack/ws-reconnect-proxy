@@ -10,27 +10,29 @@ class Receiver {
   constructor() {
     this.server = new WebSocket.Server({ port: config.port });
     this.server.on('connection', this.handleIncoming.bind(this));
-    this.upstream = new WebSocket(config.upstream);
     this.waiting = true;
     this.clientOnline = false;
     this.upstreamWait = () => {
       this.waiting = false;
     };
+    this.upstream = new WebSocket(config.upstream);
     this.queue = new Queue();
     this.upstream.on('open', this.upstreamWait);
-    this.upstream.on('message', msg => {
-      if (!this.clientOnline) {
-        this.queue.enqueue(msg);
-      } else {
-        this.server.clients.forEach(client => {
-          client.send(msg);
-        });
-      }
-    });
+    this.upstream.on('message', this.upstreamMessageHandling.bind(this));
     this.upstream.on('error', (err) => {
       logger.info(`Received error on upstream socket in receiver mode: ${err}`);
     });
     logger.info(`Server started on port ${config.port}`);
+  }
+
+  upstreamMessageHandling(msg) {
+    if (!this.clientOnline) {
+      this.queue.enqueue(msg);
+    } else {
+      this.server.clients.forEach(client => {
+        client.send(msg);
+      });
+    }
   }
 
   drainQueue() {
@@ -45,16 +47,14 @@ class Receiver {
   handleIncoming(socket) {
     socket.id = uuidv4();
     logger.info(`Received incoming request for ${socket.id}`);
+
     if (!this.clientOnline) {
       this.drainQueue();
       this.clientOnline = true;
     }
+
     socket.on('message', msg => {
-      if (this.waiting) {
-        this.queue.enqueue(msg);
-      } else {
-        this.upstream.send(msg);
-      }
+      this.upstream.send(msg);
     });
 
     socket.on('close', (code, msg) => {
