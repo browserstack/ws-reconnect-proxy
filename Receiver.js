@@ -61,16 +61,19 @@ class Receiver {
     }
   }
 
-  handleIncoming(socket) {
+  handleIncoming(socket, request) {
     socket.id = uuidv4();
     logger.info(`Received incoming request for ${socket.id}`);
+
+    this.connectToUpstream(this.updateURL(request.url, config.upstream));
 
     if (!this.clientOnline) {
       this.drainQueue();
       this.clientOnline = true;
     }
 
-    socket.on('message', msg => {
+    socket.on('message', async msg => {
+      await this.waiting;
       this.upstream.send(msg);
     });
 
