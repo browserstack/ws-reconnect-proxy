@@ -18,14 +18,16 @@ function disconnectOldWorkers() {
 }
 
 function spawnNewWorkers() {
-  for (let i = 0; i < WORKER_CNT; ++i) {
-    const worker = cluster.fork();
-    worker.on('error', (err) => {
-      logger.error(`Received error event on ${worker.id} : ${err}`);
-    });
-    logger.info(`Created worker with id ${worker.id}`);
-    activeWorkers.push(worker);
-  };
+  if (cluster.isMaster) {
+    for (let i = 0; i < WORKER_CNT; ++i) {
+      const worker = cluster.fork();
+      worker.on('error', (err) => {
+        logger.error(`Received error event on ${worker.id} : ${err}`);
+      });
+      logger.info(`Created worker with id ${worker.id}`);
+      activeWorkers.push(worker);
+    };
+  }
 }
 
 watchFile('tmp/restart.txt', (curr, prev) => {
