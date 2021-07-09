@@ -2,6 +2,7 @@
 
 const logger = require('./loggerFactory.js');
 const { config } = require('./constants.js');
+const { URL } = require('url');
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 const Queue = require('./queue.js');
@@ -10,19 +11,35 @@ class Receiver {
   constructor() {
     this.server = new WebSocket.Server({ port: config.port });
     this.server.on('connection', this.handleIncoming.bind(this));
-    this.waiting = true;
+    this.resolveFn = () => {};
+    this.waiting = new Promise((res) => {
+      this.resolveFn = res;
+    });
     this.clientOnline = false;
     this.upstreamWait = () => {
       this.waiting = false;
     };
-    this.upstream = new WebSocket(config.upstream);
+    this.upstreamQueue = new Queue();
+    this.upstream = null;
     this.queue = new Queue();
-    this.upstream.on('open', this.upstreamWait);
-    this.upstream.on('message', this.upstreamMessageHandling.bind(this));
-    this.upstream.on('error', (err) => {
-      logger.info(`Received error on upstream socket in receiver mode: ${err}`);
-    });
     logger.info(`Server started on port ${config.port}`);
+  }
+
+  updateURL(suffixURL, host) {
+    const upstreamURL = new URL(suffixURL, `ws://${host}`);
+    upstreamURL.port = 9222;
+    return upstreamURL.href;
+  }
+
+  connectToUpstream(url) {
+    if (this.upstream === null) {
+      this.upstream = new WebSocket(url);
+      this.upstream.on('open', this.resolveFn);
+      this.upstream.on('message', this.upstreamMessageHandling.bind(this));
+      this.upstream.on('error', (err) => {
+        logger.info(`Received error on upstream socket in receiver mode: ${err}`);
+      });
+    }
   }
 
   upstreamMessageHandling(msg) {

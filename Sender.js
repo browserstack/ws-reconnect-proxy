@@ -4,6 +4,7 @@ const logger = require('./loggerFactory.js');
 const { config, kUpstreamClosed, kReceivedReply } = require('./constants.js');
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
+const { URL } = require('url');
 const Upstream = require('./upstream.js');
 const Queue = require('./queue.js');
 
@@ -17,10 +18,18 @@ class Sender {
     logger.info(`Server started in sender mode on port ${config.port}`);
   }
 
+  static createTarget(suffixURL) {
+    const url = new URL(suffixURL, config.upstream);
+    return url.href;
+  }
+
   createUpstream(socket) {
     this.upstreamWait.set(socket.id, true);
     const resolveFn = this.enableUpstream(socket).bind(this);
-    const upstream = Upstream.createSocket(config.upstream, socket.id, resolveFn);
+    const upstream = Upstream.createSocket(socket.id,
+      { url: Sender.createTarget(socket.reqURL), headers: socket.reqHeaders },
+      resolveFn
+    );
     this.addUpstreamEvents(socket, upstream);
     this.upstreams.set(socket.id, upstream);
   }
@@ -31,6 +40,7 @@ class Sender {
       while (!list.isEmpty()) {
         this.forwardUpstream(socket.id, list.dequeue());
       }
+      logger.debug(`Upstrea wait set to false for ${socket.id}`);
       this.upstreamWait.set(socket.id, false);
     };
   }
@@ -46,8 +56,10 @@ class Sender {
     });
   }
 
-  handleIncoming(ws) {
+  handleIncoming(ws, request) {
     ws.id = uuidv4();
+    ws.reqURL = request.url;
+    ws.reqHeaders = request.headers;
     logger.info(`Received incoming connection: ${ws.id}`);
     this.createUpstream(ws);
     const list = new Queue();

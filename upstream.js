@@ -7,22 +7,47 @@ const { kUpstreamClosed, kReceivedReply } = require('./constants');
 
 const noop = () => {};
 
+const DISALLOWED_HEADERS = [
+  'host',
+  'connection',
+  'sec-websocket-key',
+  'sec-websocket-version',
+  'upgrade'
+];
+
 class Upstream extends EventEmitter {
-  constructor(url, id, resolveFn = noop) {
+  constructor(id, { url, headers }, resolveFn = noop) {
     super();
     this.url = url;
     this.retrying = true;
+    DISALLOWED_HEADERS.forEach(h => delete headers[h]);
+    this.headers = headers;
+    this.replayInfo = null;
     this.resolveFn = resolveFn;
     this.termminated = false;
     this.clientId = id;
     this.connect(url, resolveFn);
   }
 
+  generateHeaders() {
+    if (this.replayInfo !== null) {
+      this.headers['X-Replay'] = true;
+    }
+    return this.headers;
+  }
+
   connect(url, resolveFn) {
-    this.socket = new WebSocket(url);
+    this.socket = new WebSocket(url, {
+      headers: this.generateHeaders()
+    });
     this.socket.on('open', () => {
       logger.info(`Connected to upstream for ${this.clientId}`);
       this.retrying = false;
+      if (this.replayInfo !== null) {
+        // Send the replayInfo before the continuation
+        // of message proxoy
+        this.socket.send(this.replayInfo);
+      }
       resolveFn();
     });
     this.socket.on('close', this.closedUpstream.bind(this));
@@ -32,14 +57,21 @@ class Upstream extends EventEmitter {
 
   closedUpstream(code, msg) {
     logger.info(`Upstream closed for ${this.clientId} with code: ${code}`);
-    // For now assume it is hard close only
-    if (code === 1006 && !this.retrying && !this.terminated)
-      this.emit(kUpstreamClosed);
-    else
-      this.connect(this.url, this.resolveFn);
+    if (!this.terminated) {
+      // For now assume it is hard close only
+      if (code === 1006 && !this.retrying)
+        this.emit(kUpstreamClosed);
+      else
+        this.connect(this.url, this.resolveFn);
+    }
   }
 
   replyToClient(msg) {
+    if (msg.substring(0, 9) === 'REPLAY_UP') {
+      this.replayInfo = msg;
+      this.socket.terminate();
+      return;
+    }
     this.emit(kReceivedReply, msg);
   }
 
@@ -64,8 +96,8 @@ class Upstream extends EventEmitter {
     this.socket.send(msg);
   }
 
-  static createSocket(url, id, resolve) {
-    return new Upstream(url, id, resolve);
+  static createSocket(id, socketOpts, resolve) {
+    return new Upstream(id, socketOpts, resolve);
   }
 };
 
