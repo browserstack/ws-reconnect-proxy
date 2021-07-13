@@ -19,6 +19,18 @@ This is the spec for lower level Design for reconnectin proxy
     * msgQueue -> In case of reconnection to upstream we need to queue the
     message for client sockets.
 
+    ------   Queue Messages
+    | C1 |---------------          |-------|    Disconnect edge          |--------|
+    ------              |--------->|       |<--------------------------->|        |
+                                   | Proxy |<--------------------------->| Server |
+    ------              |--------->|-------|                             ----------
+    | C2 |--------------|
+    ------
+
+    In this mode we do not care about enqueue message from upstream and we can
+    have different connectin to upstream to isolate the messages on each socket.
+    Here the upstream also is unique for each connection.
+
 * `upstream`
   This is the abstraction over the WebSocket to which we connect to Upstream
   URL. This is required since we want to isolate the state of upstream sockets
@@ -71,3 +83,13 @@ This is the spec for lower level Design for reconnectin proxy
     * queue -> Enqueue the message till there is no client to send the
     message.
     * upstream -> Upstream websocket connection to the target.
+
+  --------    Can Break       ---------    Should enqueue messages          ----------
+  | Node |------------------->| Proxy |<----------------------------------->| Server |
+  --------                    ---------                                     ----------
+
+  Constraint in this mode is for simplicity to be single upstream. If any client
+  connects it will be receiving response from single upstream only.
+
+  TODO: We can add a connection id in receiver mode to connect to specific
+  upstream socket and can remove the single upstream socket.

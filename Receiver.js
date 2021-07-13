@@ -27,6 +27,7 @@ class Receiver {
 
   static updateURL(suffixURL, host) {
     const upstreamURL = new URL(suffixURL, `ws://${host}`);
+    logger.info(`Connecting to this URL: ${upstreamURL.href}`);
     return upstreamURL.href;
   }
 
