@@ -3,6 +3,8 @@
 const config = require('./config');
 const logger = require('./loggerFactory');
 
+const kClientMessage = Symbol('kClientMessage');
+const kClosedReceived = Symbol('kClosedReceived');
 const kSender = Symbol('kSender');
 const kReceiver = Symbol('kReceiver');
 const kUpstreamClosed = Symbol('kUpstreamClosed');
@@ -81,7 +83,7 @@ class ConfigParser {
     const { workers } = config;
     let workerVal = 2;
     if (typeof workers !== 'number') {
-      logger.error('Unvalid workers defined using default (2)');
+      logger.error('Invalid workers defined using default (2)');
     } else {
       workerVal = workers;
     }
@@ -106,6 +108,20 @@ class ConfigParser {
     this.port = portVal;
     return this;
   }
+
+  setReceiverUpstream() {
+    const { receiverUpstream } = config;
+    if (this.isSender) {
+      logger.info('Not using receiver upstream in sender mode');
+      this.receiverUpstream = null;
+    } else if (typeof receiverUpstream !== 'object') {
+      logger.error('Invalid type for receiverUpstream using default object {}');
+      this.receiverUpstream = {};
+    } else {
+      this.receiverUpstream = receiverUpstream;
+    }
+    return this;
+  }
 }
 
 const configParser = (new ConfigParser())
@@ -115,11 +131,14 @@ const configParser = (new ConfigParser())
   .setupRetryDelay()
   .setPort()
   .setWorkers()
-  .setSenderUpstream();
+  .setSenderUpstream()
+  .setReceiverUpstream();
 
 module.exports = {
   config: configParser,
   kSender,
+  kClientMessage,
+  kClosedReceived,
   kUpstreamClosed,
   kReceivedReply,
   kReceiver

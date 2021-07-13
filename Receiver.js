@@ -22,12 +22,11 @@ class Receiver {
     this.upstreamQueue = new Queue();
     this.upstream = null;
     this.queue = new Queue();
-    logger.info(`Server started on port ${config.port}`);
+    logger.info(`Server started in Receiver mode on port ${config.port}`);
   }
 
-  updateURL(suffixURL, host) {
+  static updateURL(suffixURL, host) {
     const upstreamURL = new URL(suffixURL, `ws://${host}`);
-    upstreamURL.port = 9222;
     return upstreamURL.href;
   }
 
@@ -61,11 +60,19 @@ class Receiver {
     }
   }
 
+  static determineReceiverUpstream(request) {
+    const { headerKey, host } = config.receiverUpstream;
+    const { url, headers } = request;
+    const hostVal = typeof headerKey === 'string' ?
+      (headers[headerKey] || host) :
+      host;
+    return Receiver.updateURL(url, hostVal);
+  }
+
   handleIncoming(socket, request) {
     socket.id = uuidv4();
     logger.info(`Received incoming request for ${socket.id}`);
-
-    this.connectToUpstream(this.updateURL(request.url, config.upstream));
+    this.connectToUpstream(Receiver.determineReceiverUpstream(request));
 
     if (!this.clientOnline) {
       this.drainQueue();

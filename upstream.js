@@ -3,9 +3,11 @@
 const WebSocket = require('ws');
 const logger = require('./loggerFactory');
 const EventEmitter = require('events');
-const { kUpstreamClosed, kReceivedReply } = require('./constants');
+const { kUpstreamClosed, config, kReceivedReply } = require('./constants');
+const util = require('util');
 
 const noop = () => {};
+const sleep = util.promisify(setTimeout);
 
 const DISALLOWED_HEADERS = [
   'host',
@@ -26,6 +28,7 @@ class Upstream extends EventEmitter {
     this.resolveFn = resolveFn;
     this.termminated = false;
     this.clientId = id;
+    logger.debug(`Creating upstream with ${url}`);
     this.connect(url, resolveFn);
   }
 
@@ -55,14 +58,16 @@ class Upstream extends EventEmitter {
     this.socket.on('message', this.replyToClient.bind(this));
   }
 
-  closedUpstream(code, msg) {
+  async closedUpstream(code, msg) {
     logger.info(`Upstream closed for ${this.clientId} with code: ${code}`);
     if (!this.terminated) {
       // For now assume it is hard close only
-      if (code === 1006 && !this.retrying)
+      if (code === 1006 && !this.retrying) {
         this.emit(kUpstreamClosed);
-      else
+      } else {
+        await sleep(config.retryDelayVal);
         this.connect(this.url, this.resolveFn);
+      }
     }
   }
 
