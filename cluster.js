@@ -2,7 +2,7 @@
 
 const cluster = require('cluster');
 const { config } = require('./constants.js');
-const { watchFile } = require('fs');
+const { watch } = require('fs');
 const logger = require('./loggerFactory.js');
 
 const WORKER_CNT = config.workerVal;
@@ -30,8 +30,10 @@ function spawnNewWorkers() {
   }
 }
 
-watchFile('tmp/restart.txt', (curr, prev) => {
-  if (curr.mtime > prev.mtime) {
+const currTime = Date.now();
+watch('tmp/restart.txt', () => {
+  if (Date.now() > currTime) {
+    currTime = Date.now();
     disconnectOldWorkers();
     spawnNewWorkers();
   }
