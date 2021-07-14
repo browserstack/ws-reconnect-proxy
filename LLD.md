@@ -93,3 +93,41 @@ This is the spec for lower level Design for reconnectin proxy
 
   TODO: We can add a connection id in receiver mode to connect to specific
   upstream socket and can remove the single upstream socket.
+
+
+
+=========================================================================================
+## V2 Redesign
+
+class IncomingWebSocket:
+  string connectionId
+  socket connection
+  IncomingMessage request
+  List queue
+
+class OutgoingWebSocket:
+  bool shouldRetry
+  socket connection
+  Headers headers
+  List queue
+
+class Proxy:
+  List<Context> contexts
+  WebSocketServer server
+
+class Context:
+  string sessionId
+  IncomingWebSocket incoming
+  OutgoingWebSocket outgoing
+  Map reconnectData
+
+* If client close then upstream should not be closed immediately and wait for
+some time before closing the upstream.
+* If upstram is closed retry for certain time and then terminate the client
+connection.
+* Relay messages from Incoming to Outgoing.
+* In case of first message on the outgoing object do not proxy to client and
+resolve the promise which acted as a gate to send messages on socket.
+
+If reconnectId is not present then fetch the reconnectId from the first message.
+Also push to client if the replayId is present in the request headers.
