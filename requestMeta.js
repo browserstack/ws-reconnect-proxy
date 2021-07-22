@@ -6,7 +6,7 @@ function extractConnectionId(request) {
 }
 
 function isReconnectHeader(request) {
-  return typeof extractConnectionId(request) === 'undefined';
+  return typeof extractConnectionId(request) !== 'undefined';
 }
 
 module.exports = {

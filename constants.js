@@ -1,27 +1,39 @@
 'use strict';
 
-const config = require('./config');
+const config = require('./config.json');
 const logger = require('./loggerFactory');
 
-const kClientMessage = Symbol('kClientMessage');
-const kClosedReceived = Symbol('kClosedReceived');
 const kSender = Symbol('kSender');
 const kReceiver = Symbol('kReceiver');
 const kUpstreamClosed = Symbol('kUpstreamClosed');
 const kReceivedReply = Symbol('kReceivedReply');
+const kStartConnection = Symbol('kStartConnection');
+const kMessageReceived = Symbol('kMessageReceived');
+const kSendMessage = Symbol('kSendMessage');
+const kQueueMessage = Symbol('kQueueMessage');
+const kDrainMessage = Symbol('kDrainMessage');
+const kConnectionOpened = Symbol('kConnectionOpened');
+const kDequeueMessage = Symbol('kDequeueMessage');
+const kClientClosed = Symbol('kClientClosed');
+const kCleanup = Symbol('kCleanup');
+const kDrainCompleted = Symbol('kDrainCompleted');
+const kReleaseTap = Symbol('kReleaseTap');
+const kAddNewContext = Symbol('kAddNewContext');
+const kUpstreamRestart = Symbol('kUpstreamRestart');
+
+const RECONNECT = 'RECONNECT';
+const SERVICE_RESTART = 'Service Restart';
+
+const DISALLOWED_HEADERS = [
+  'host',
+  'connection',
+  'sec-websocket-key',
+  'sec-websocket-version',
+  'upgrade'
+];
+
 
 class ConfigParser {
-  constructor() {
-    const { upstream, executionMode: mode } = config;
-    if (mode !== 0 && mode !== 1) {
-      throw new Error(`Invalid mode type present ${mode}`);
-    }
-    if (mode === 0 && typeof upstream !== 'string') {
-      throw new Error('Invalid upstream present');
-    }
-    this.mode = mode;
-  }
-
   setupRetries() {
     const { retryLimit } = config;
     let retryVal;
@@ -125,7 +137,6 @@ class ConfigParser {
 }
 
 const configParser = (new ConfigParser())
-  .decideMode()
   .setupHooks()
   .setupRetries()
   .setupRetryDelay()
@@ -136,10 +147,24 @@ const configParser = (new ConfigParser())
 
 module.exports = {
   config: configParser,
+  RECONNECT,
+  SERVICE_RESTART,
+  DISALLOWED_HEADERS,
   kSender,
-  kClientMessage,
-  kClosedReceived,
   kUpstreamClosed,
   kReceivedReply,
-  kReceiver
+  kReceiver,
+  kStartConnection,
+  kMessageReceived,
+  kSendMessage,
+  kQueueMessage,
+  kDrainMessage,
+  kConnectionOpened,
+  kDequeueMessage,
+  kClientClosed,
+  kCleanup,
+  kDrainCompleted,
+  kReleaseTap,
+  kAddNewContext,
+  kUpstreamRestart
 }

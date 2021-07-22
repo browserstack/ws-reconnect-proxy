@@ -40,7 +40,7 @@ class Sender {
       while (!list.isEmpty()) {
         this.forwardUpstream(socket.id, list.dequeue());
       }
-      logger.debug(`Upstrea wait set to false for ${socket.id}`);
+      logger.debug(`Upstream wait set to false for ${socket.id}`);
       this.upstreamWait.set(socket.id, false);
     };
   }

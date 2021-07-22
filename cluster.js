@@ -4,6 +4,7 @@ const cluster = require('cluster');
 const { config } = require('./constants.js');
 const { watch } = require('fs');
 const logger = require('./loggerFactory.js');
+const Proxy = require('./Proxy.js');
 
 const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
@@ -30,7 +31,7 @@ function spawnNewWorkers() {
   }
 }
 
-const currTime = Date.now();
+let currTime = Date.now();
 watch('tmp/restart.txt', () => {
   if (Date.now() > currTime) {
     currTime = Date.now();
@@ -40,7 +41,7 @@ watch('tmp/restart.txt', () => {
 });
 
 if (cluster.isMaster) {
-  cluster.on('online', function(worker) {
+  cluster.on('online', function (worker) {
     logger.info(`Worker ${worker.process.pid} is online`);
   });
 
@@ -51,6 +52,5 @@ if (cluster.isMaster) {
 
   spawnNewWorkers();
 } else {
-  const pkg = config.isSender ? require('./Sender.js') : require('./Receiver.js');
-  new pkg();
+  new Proxy();
 }
