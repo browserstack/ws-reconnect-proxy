@@ -32,7 +32,7 @@ class Proxy {
    * @param {object} socket
    * @param {object} request
    */
-   connectionHandler(socket, request) {
+  connectionHandler(socket, request) {
     if (isReconnectHeader(request)) {
       const reconnectId = extractConnectionId(request);
       if (this.contexts.has(reconnectId)) {
@@ -48,7 +48,7 @@ class Proxy {
       });
 
       context.on(kAddNewContext, (connectionId) => {
-        this.contexts.add(connectionId, context);
+        this.contexts.set(connectionId, context);
         context.removeAllListeners(kAddNewContext);
       })
     }
