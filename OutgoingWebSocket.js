@@ -2,9 +2,9 @@
 
 const EventEmitter = require('events');
 const WebSocket = require('ws');
-const Queue = require('./queue.js');
+const Queue = require('./Queue');
 const { promisify } = require('util');
-const logger = require('./loggerFactory.js');
+const logger = require('./loggerFactory');
 const sleep = promisify(setTimeout);
 const {
   config,
@@ -12,14 +12,18 @@ const {
   kAddNewContext,
   kReleaseTap,
   kMessageReceived,
+  kError,
   kUpstreamRestart,
   kUpstreamClosed,
   kDrainMessage,
   kDrainCompleted,
   SERVICE_RESTART,
   RECONNECT,
-  DISALLOWED_HEADERS
-} = require('./constants.js');
+  DISALLOWED_HEADERS,
+  CONNECTION_ID_HEADER,
+  OUTGOING
+} = require('./constants');
+const { extractConnectionId } = require('./util');
 
 /**
   * Outgoing WebSocket connection is the connection object
@@ -32,11 +36,12 @@ const {
 class OutgoingWebSocket extends EventEmitter {
   constructor(url, headers) {
     super();
+    this.url = url;
+    this.setHeaders(headers);
+    this.setConnectionId();
     this.shouldRetry = false;
     this.socket = null;
-    this.url = url;
-    DISALLOWED_HEADERS.forEach(h => delete headers[h]);
-    this.headers = headers;
+    this.reconnectInfo = null;
     this.queue = new Queue();
     this.retryCount = config.retryVal;
   }
@@ -47,7 +52,10 @@ class OutgoingWebSocket extends EventEmitter {
   addSocket() {
     logger.debug(`Trying to connect with socket: ${this.url}`);
     this.socket = new WebSocket(this.url, {
-      headers: this.headers
+      headers: {
+        ...this.headers,
+        ...this.reconnectInfo !== null && { 'x-reconnect': true }
+      }
     });
     this.registerListeners();
   }
@@ -55,10 +63,10 @@ class OutgoingWebSocket extends EventEmitter {
   /**
    * Registers the socket listeners.
    */
-  registerListeners(){
+  registerListeners() {
     this.socket.on('open', this.openHandler.bind(this));
     this.socket.on('message', this.messageHandler.bind(this));
-    this.socket.on('close', this.connectionClosed.bind(this));
+    this.socket.on('close', this.closeHandler.bind(this));
     this.socket.on('error', this.errorHandler.bind(this));
   }
 
@@ -66,11 +74,13 @@ class OutgoingWebSocket extends EventEmitter {
    * Triggers when socket connection is opened.
    */
   openHandler() {
-    if (this.shouldRetry) {
+    if (this.reconnectInfo !== null) {
+      logger.debug(`${OUTGOING} [${this.connectionId}] [RECONNECT] - ${this.reconnectInfo}`);
       this.send(this.reconnectInfo);
     }
     this.emit(kConnectionOpened);
     this.shouldRetry = false;
+    this.retryCount = config.retryVal;
   }
 
   /**
@@ -79,31 +89,14 @@ class OutgoingWebSocket extends EventEmitter {
    * @param {string} msg
    */
   messageHandler(msg) {
-    if (msg.substring(0, 9) === RECONNECT) {
+    if (msg != null && msg != undefined && msg != "" && msg.substring(0, 9) === RECONNECT) {
       this.reconnectInfo = msg;
-      this.emit(kAddNewContext, this.getConnectionId());
+      this.emit(kAddNewContext, this.connectionId);
       this.emit(kReleaseTap);
       return;
     }
-    logger.debug(`Received message on outgoing socket: ${msg}`);
     this.emit(kMessageReceived, msg);
   }
-
-  /**
-   * Gets the connection id.
-   *
-   * @returns {string}
-   */
-  getConnectionId() {
-    const reconnectData = this.reconnectInfo.substring(10, this.reconnectInfo.length);
-    try {
-      const reconnectParsed = JSON.parse(reconnectData);
-      return reconnectParsed.connectionId;
-    } catch (error) {
-      logger.error(error);
-    }
-  }
-
 
   /**
    * Triggers when socket connection is closed.
@@ -112,18 +105,23 @@ class OutgoingWebSocket extends EventEmitter {
    * @param {string} msg
    */
   closeHandler(code, msg) {
-    logger.debug(`Received Closed : ${code} - ${msg}`);
     if (!this.shouldRetry) {
       if (msg === SERVICE_RESTART) {
         this.shouldRetry = true;
         this.emit(kUpstreamRestart, code, msg);
         this.startRetries(code, msg);
       }
-      else
+      else {
         this.emit(kUpstreamClosed, code, msg);
-    } else {
-      this.startRetries(code, msg);
+      }
     }
+  }
+
+  /**
+   * Triggers when error occured on socket.
+   */
+  errorHandler() {
+    this.emit(kError);
   }
 
   /**
@@ -139,9 +137,9 @@ class OutgoingWebSocket extends EventEmitter {
       } else {
         this.retryCount = this.retryCount - 1;
         await sleep(config.retryDelayVal);
-        logger.debug(`Retries left: ${this.retryCount}`);
         this.addSocket();
       }
+      logger.debug(`${OUTGOING} [${this.connectionId}] [RETRIES LEFT: ${this.retryCount}] `);
     }
   }
 
@@ -171,13 +169,6 @@ class OutgoingWebSocket extends EventEmitter {
   }
 
   /**
-   * Triggers when error occured on socket.
-   */
-  errorHandler() {
-    logger.error("Error occured in outgoing socket!")
-  }
-
-  /**
    * Drains the queue and emits completed event.
    */
   drainQueue() {
@@ -185,6 +176,23 @@ class OutgoingWebSocket extends EventEmitter {
       this.emit(kDrainMessage, this.queue.dequeue());
     }
     this.emit(kDrainCompleted);
+  }
+
+  /**
+   * Sets connection identifier from headers
+   */
+  setConnectionId() {
+    this.connectionId = extractConnectionId(this.headers);
+  }
+
+  /**
+   * Sets the headers and sanitises it.
+   *
+   * @param {object} headers
+   */
+  setHeaders(headers) {
+    DISALLOWED_HEADERS.forEach(h => delete headers[h]);
+    this.headers = headers;
   }
 }
 

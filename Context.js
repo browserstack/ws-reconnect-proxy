@@ -1,17 +1,16 @@
 'use strict';
 
 const EventEmitter = require('events');
-const IncomingWebSocket = require('./IncomingWebSocket.js');
-const OutgoingWebSocket = require('./OutgoingWebSocket.js');
-const logger = require('./loggerFactory.js');
+const IncomingWebSocket = require('./IncomingWebSocket');
+const OutgoingWebSocket = require('./OutgoingWebSocket');
+const logger = require('./loggerFactory');
 const { createTarget } = require('./util');
 const {
   kSender,
   kUpstreamClosed,
-  kReceivedReply,
-  kReceiver,
   kStartConnection,
   kMessageReceived,
+  kError,
   kSendMessage,
   kQueueMessage,
   kDrainMessage,
@@ -22,7 +21,10 @@ const {
   kDrainCompleted,
   kReleaseTap,
   kAddNewContext,
-  kUpstreamRestart
+  kUpstreamRestart,
+  config,
+  INCOMING,
+  OUTGOING
 } = require('./constants');
 
 /**
@@ -34,7 +36,7 @@ const {
 class Context extends EventEmitter {
 
   /**
-   * Creates the context.
+   * Creates the context with connection identifier.
    *
    * @param {string} connectionId
    */
@@ -43,7 +45,6 @@ class Context extends EventEmitter {
     this.connectionId = connectionId;
     this.incomingSocket = null;
     this.outgoingSocket = null;
-    this.reconnectData = null;
     this.incomingLock = true;
     this.outgoingLock = false;
   }
@@ -51,7 +52,7 @@ class Context extends EventEmitter {
   /**
    * Adds a new incoming and outgoing connection.
    *
-   * @param {object} socket
+   * @param {WebSocket} socket
    * @param {object} request
    */
   addNewConnection(socket, request) {
@@ -65,7 +66,7 @@ class Context extends EventEmitter {
       this.incomingSocket.emit(kStartConnection);
     } else {
       this.incomingSocket.setSocket(socket, request);
-      this.outgoingSocket.drainQueue();
+      this.outgoingSocket.emit(kDequeueMessage);
       clearTimeout(this.upstreamCloseTimer);
       this.upstreamCloseTimer = null;
     }
@@ -77,23 +78,28 @@ class Context extends EventEmitter {
   registerIncomingListeners() {
     this.incomingSocket.on(kMessageReceived, msg => {
       if (this.incomingLock) {
-        logger.debug(`Adding to Incoming Socket Queue : ${msg}`);
+        logger.debug(`${INCOMING} [${this.connectionId}] [QUEUE] - ${msg}`);
         this.incomingSocket.addToQueue(msg);
       }
       else
         this.outgoingSocket.emit(kSendMessage, msg);
     });
 
+    this.incomingSocket.on(kError, () => {
+      logger.error(`${INCOMING} [${this.connectionId}] [ERROR]`)
+    });
+
     this.incomingSocket.on(kQueueMessage, () => {
       this.incomingLock = true;
+      logger.debug(`${INCOMING} [${this.connectionId}] [QUEUE] - STARTED`);
     });
 
     this.incomingSocket.on(kSendMessage, msg => {
       this.incomingSocket.send(msg);
+      logger.debug(`${INCOMING} [${this.connectionId}] [MESSAGE] - ${msg}`);
     });
 
     this.incomingSocket.on(kDrainMessage, msg => {
-      logger.debug(`Incoming Socket Drain : ${msg}`);
       this.outgoingSocket.emit(kSendMessage, msg);
     });
 
@@ -103,11 +109,13 @@ class Context extends EventEmitter {
         this.upstreamCloseTimer = null;
       }
       this.outgoingSocket.emit(kDequeueMessage);
+      logger.debug(`${INCOMING} [${this.connectionId}] [OPEN]`);
     });
 
     this.incomingSocket.on(kClientClosed, (code, msg) => {
+      logger.debug(`${INCOMING} [${this.connectionId}] [CLOSE] - Socket closed with ${code} and ${msg}`);
       this.outgoingSocket.emit(kQueueMessage);
-      this.upstreamCloseTimer = setTimeout(this.closingOutgoingSocket.bind(this), 5000);
+      this.upstreamCloseTimer = setTimeout(this.closingOutgoingSocket.bind(this), config.closeTimer);
     });
 
     this.incomingSocket.on(kDequeueMessage, () => {
@@ -117,16 +125,9 @@ class Context extends EventEmitter {
     this.incomingSocket.on(kDrainCompleted, () => {
       if (this.incomingLock) {
         this.incomingLock = false;
+        logger.debug(`${INCOMING} [${this.connectionId}] [QUEUE] - COMPLETED`);
       }
     });
-  }
-
-  /**
-   * Closes outgoing socket and emits clean up event.
-   */
-  closingOutgoingSocket() {
-    this.outgoingSocket.close();
-    this.emit(kCleanup);
   }
 
   /**
@@ -144,19 +145,25 @@ class Context extends EventEmitter {
 
     this.outgoingSocket.on(kMessageReceived, msg => {
       if (this.outgoingLock) {
-        logger.info(`Adding to Outgoing Socket Queue : ${msg}`);
+        logger.debug(`${OUTGOING} [${this.connectionId}] [QUEUE] - ${msg}`);
         this.outgoingSocket.addToQueue(msg);
       }
       else
         this.incomingSocket.emit(kSendMessage, msg);
     });
 
+    this.outgoingSocket.on(kError, () => {
+      logger.error(`${OUTGOING} [${this.connectionId}] [ERROR]`)
+    });
+
     this.outgoingSocket.on(kQueueMessage, () => {
       this.outgoingLock = true;
+      logger.debug(`${OUTGOING} [${this.connectionId}] [QUEUE] - STARTED`);
     });
 
     this.outgoingSocket.on(kSendMessage, msg => {
       this.outgoingSocket.send(msg);
+      logger.debug(`${OUTGOING} [${this.connectionId}] [MESSAGE] - ${msg}`);
     });
 
     this.outgoingSocket.on(kDequeueMessage, () => {
@@ -165,36 +172,38 @@ class Context extends EventEmitter {
 
     this.outgoingSocket.on(kUpstreamClosed, (code, msg) => {
       this.incomingSocket.close();
-      this.emit(kCleanup);
+      this.emit(kCleanup, this.connectionId);
+      logger.debug(`${OUTGOING} [${this.connectionId}] [CLOSE] - Socket closed with ${code} and ${msg}`);
     });
 
     this.outgoingSocket.on(kUpstreamRestart, (code, msg) => {
       this.incomingSocket.emit(kQueueMessage);
+      logger.debug(`${OUTGOING} [${this.connectionId}] [RESTART] ${code} - ${msg}`);
     });
 
     this.outgoingSocket.on(kConnectionOpened, () => {
       this.incomingSocket.emit(kDequeueMessage);
+      logger.debug(`${OUTGOING} [${this.connectionId}] [OPEN] `);
     });
 
     this.outgoingSocket.on(kDrainMessage, msg => {
-      logger.info(`Outgoing Socket Drain : ${msg}`);
       this.incomingSocket.emit(kSendMessage, msg);
     });
 
     this.outgoingSocket.on(kDrainCompleted, () => {
       if (this.outgoingLock) {
         this.outgoingLock = false;
+        logger.debug(`${OUTGOING} [${this.connectionId}] [QUEUE]- COMPLETED`);
       }
     });
   }
 
   /**
-   * Sets the reconnect data.
-   *
-   * @param {object} data
-   */
-  setReconnectData(data) {
-    this.reconnectData = data;
+ * Closes outgoing socket and emits clean up event.
+ */
+  closingOutgoingSocket() {
+    this.outgoingSocket.close();
+    this.emit(kCleanup, this.connectionId);
   }
 
   /**

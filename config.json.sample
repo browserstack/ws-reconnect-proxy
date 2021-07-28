@@ -1,5 +1,7 @@
 {
   "workers": 3,
-  "executionMode": 0,
-  "upstream": "ws://localhost:8082"
+  "port": 9124,
+  "upstream": "ws://localhost:8080",
+  "retryDelay": 10000,
+  "closeTimer": 15000
 }

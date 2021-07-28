@@ -4,13 +4,14 @@ const EventEmitter = require('events');
 const {
   kConnectionOpened,
   kMessageReceived,
+  kError,
   kClientClosed,
   kDrainMessage,
   kDrainCompleted,
   kUpstreamClosed
-} = require('./constants.js');
-const logger = require('./loggerFactory.js');
-const Queue = require('./queue.js');
+} = require('./constants');
+const logger = require('./loggerFactory');
+const Queue = require('./Queue');
 
 /**
   * Incoming connection to the proxy will be treated as an IncomingWebSocket.
@@ -36,15 +37,15 @@ class IncomingWebSocket extends EventEmitter {
    */
   registerListeners() {
     this.socket.on('open', this.openHandler.bind(this));
-    this.socket.on('error', this.errorHandler.bind(this));
     this.socket.on('message', this.messageHandler.bind(this));
     this.socket.on('close', this.closeHandler.bind(this));
+    this.socket.on('error', this.errorHandler.bind(this));
   }
 
   /**
    * Triggers when socket connection is opened.
    */
-  openHandler(){
+  openHandler() {
     this.emit(kConnectionOpened);
   }
 
@@ -54,7 +55,6 @@ class IncomingWebSocket extends EventEmitter {
    * @param {string} msg
    */
   messageHandler(msg) {
-    logger.debug(`Received message on incoming socket: ${msg}`);
     this.emit(kMessageReceived, msg);
   }
 
@@ -66,29 +66,28 @@ class IncomingWebSocket extends EventEmitter {
    */
   closeHandler(code, msg) {
     if (!this.teardown) {
-      logger.debug(`Client is closed sending kClientClosed`);
       this.emit(kClientClosed, code, msg);
     }
-    logger.debug(`Recived close code for incoming: ${code} and ${msg}`);
+
   }
 
   /**
    * Triggers when error occured on socket.
    */
   errorHandler() {
-    logger.error("Error occured in incoming socket!");
+    this.emit(kError);
   }
 
   /**
    * Sets the incoming socket.
    *
-   * @param {object} socket
+   * @param {WebSocket} socket
    * @param {object} request
    */
-   setSocket(socket, request) {
+  setSocket(socket, request) {
     this.socket = socket;
     this.request = request;
-    this.addListener();
+    this.registerListeners();
   }
 
   /**
@@ -114,7 +113,6 @@ class IncomingWebSocket extends EventEmitter {
    * Closes the socket connection.
    */
   close() {
-    logger.debug(`Terminating the client socket`);
     this.teardown = true;
     this.socket.close(1001, '');
     this.socket.terminate();

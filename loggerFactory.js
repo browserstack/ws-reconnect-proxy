@@ -1,6 +1,7 @@
 'use strict';
 
-const Logger = require('pino')();
+const pino = require('pino');
+const Logger = pino({}, pino.destination("./tmp/proxy.log"));
 
 Logger.level = 'debug';
 

@@ -2,12 +2,13 @@
 
 const WebSocket = require('ws');
 const { config, kCleanup, kAddNewContext } = require('./constants');
-const logger = require('./loggerFactory.js');
-const Context = require('./Context.js');
+const logger = require('./loggerFactory');
+const Context = require('./Context');
 const {
   isReconnectHeader,
-  extractConnectionId
-} = require('./requestMeta.js');
+  extractConnectionId,
+  extractReconnectId
+} = require('./util');
 
 /**
  * Proxy is the entrypoint and instantiates the context among the socket connection.
@@ -29,18 +30,21 @@ class Proxy {
   /**
    * Triggers when connection is established on socket.
    *
-   * @param {object} socket
+   * @param {WebSocket} socket
    * @param {object} request
    */
   connectionHandler(socket, request) {
-    if (isReconnectHeader(request)) {
-      const reconnectId = extractConnectionId(request);
+    if (isReconnectHeader(request.headers)) {
+      const reconnectId = extractReconnectId(request.headers);
       if (this.contexts.has(reconnectId)) {
         const context = this.contexts.get(reconnectId);
         context.addNewConnection(socket, request);
+      } else {
+        logger.debug(`[${reconnectId}] - Unable to find reconnectId`);
       }
     } else {
-      const context = new Context(null);
+      const connId = extractConnectionId(request.headers);
+      const context = new Context(connId);
       context.addNewConnection(socket, request);
       context.on(kCleanup, (connectionId) => {
         this.contexts.delete(connectionId);
@@ -50,7 +54,11 @@ class Proxy {
       context.on(kAddNewContext, (connectionId) => {
         this.contexts.set(connectionId, context);
         context.removeAllListeners(kAddNewContext);
-      })
+      });
+
+      if (connId !== null && typeof connId === 'string') {
+        this.contexts.set(connId, context);
+      }
     }
   }
 }

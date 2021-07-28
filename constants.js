@@ -9,6 +9,7 @@ const kUpstreamClosed = Symbol('kUpstreamClosed');
 const kReceivedReply = Symbol('kReceivedReply');
 const kStartConnection = Symbol('kStartConnection');
 const kMessageReceived = Symbol('kMessageReceived');
+const kError = Symbol('kError');
 const kSendMessage = Symbol('kSendMessage');
 const kQueueMessage = Symbol('kQueueMessage');
 const kDrainMessage = Symbol('kDrainMessage');
@@ -32,6 +33,12 @@ const DISALLOWED_HEADERS = [
   'upgrade'
 ];
 
+
+const CONNECTION_ID_HEADER = 'x-connection-id';
+const RECONNECT_ID_HEADER = 'x-reconnect-id';
+
+const OUTGOING = '[OUTGOING]';
+const INCOMING = '[INCOMING]';
 
 class ConfigParser {
   setupRetries() {
@@ -103,7 +110,7 @@ class ConfigParser {
     return this;
   }
 
-  setSenderUpstream() {
+  setUpstream() {
     this.upstream = config.upstream;
     return this;
   }
@@ -134,6 +141,18 @@ class ConfigParser {
     }
     return this;
   }
+
+  setCloseTimer() {
+    const { closeTimer } = config;
+    let newCloseTimer = 5000;
+    if (typeof closeTimer !== 'undefined' && typeof closeTimer === 'number') {
+      newCloseTimer = closeTimer;
+    } else {
+      logger.info(`No close timer value sent using default (${newCloseTimer})`);
+    }
+    this.closeTimer = newCloseTimer;
+    return this;
+  }
 }
 
 const configParser = (new ConfigParser())
@@ -142,20 +161,26 @@ const configParser = (new ConfigParser())
   .setupRetryDelay()
   .setPort()
   .setWorkers()
-  .setSenderUpstream()
-  .setReceiverUpstream();
+  .setUpstream()
+  .setCloseTimer()
+
 
 module.exports = {
   config: configParser,
   RECONNECT,
   SERVICE_RESTART,
   DISALLOWED_HEADERS,
+  CONNECTION_ID_HEADER,
+  RECONNECT_ID_HEADER,
+  INCOMING,
+  OUTGOING,
   kSender,
   kUpstreamClosed,
   kReceivedReply,
   kReceiver,
   kStartConnection,
   kMessageReceived,
+  kError,
   kSendMessage,
   kQueueMessage,
   kDrainMessage,
