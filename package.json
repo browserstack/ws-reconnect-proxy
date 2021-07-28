@@ -4,18 +4,18 @@
   "description": "Proxy Server that is between a ws server and a ws client. In case of either server / client disconnects graceful or otherwise - initiates/ supports reconnection .",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/nyc ./node_modules/.bin/mocha"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ankit098/ws-reconnect-proxy.git"
+    "url": "git+https://github.com/browserstack/ws-reconnect-proxy.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Ankit098/ws-reconnect-proxy/issues"
+    "url": "https://github.com/browserstack/ws-reconnect-proxy/issues"
   },
-  "homepage": "https://github.com/Ankit098/ws-reconnect-proxy#readme",
+  "homepage": "https://github.com/browserstack/ws-reconnect-proxy#readme",
   "dependencies": {
     "pino": "^6.11.3",
     "pino-pretty": "^5.1.2",
