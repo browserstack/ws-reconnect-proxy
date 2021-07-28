@@ -26,10 +26,10 @@ describe('ConfigParser', () => {
   });
 
   it('#setPort', () => {
-    expect(config.setSenderUpstream()).to.be.equal(config);
+    expect(config.setPort()).to.be.equal(config);
   });
 
-  it('#setReceiverUpstream', () => {
-    expect(config.setSenderUpstream()).to.be.equal(config);
+  it('#setUpstream', () => {
+    expect(config.setUpstream()).to.be.equal(config);
   });
 });
