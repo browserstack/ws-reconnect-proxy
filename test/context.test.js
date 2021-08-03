@@ -4,7 +4,7 @@ const { describe, beforeEach, it, afterEach } = require('mocha');
 const { assert, expect } = require('chai');
 const WebSocket = require('ws');
 const { spy, useFakeTimers } = require('sinon');
-const rewire = require('rewire');
+
 const { 
     kDequeueMessage, 
     kMessageReceived, 
