@@ -5,6 +5,7 @@ const { config } = require('./constants.js');
 const { watch } = require('fs');
 const logger = require('./loggerFactory.js');
 const Proxy = require('./Proxy.js');
+const ProcessHandler = require('./ProcessHandler.js');
 
 const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
@@ -54,3 +55,5 @@ if (cluster.isMaster) {
 } else {
 	new Proxy();
 }
+
+process.on('uncaughtException', new ProcessHandler().onError);

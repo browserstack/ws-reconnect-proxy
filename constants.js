@@ -1,6 +1,8 @@
 'use strict';
 
-const config = require('./config.json');
+const env = process.env.NODE_ENV || 'dev'; 
+const config = require('./config.json')[env];
+
 const logger = require('./loggerFactory');
 
 const kSender = Symbol('kSender');
@@ -153,6 +155,15 @@ class ConfigParser {
 		this.closeTimer = newCloseTimer;
 		return this;
 	}
+
+	setAlertConfig() {
+		const { alertPath, alertReceivers, alertHost, alertPort } = config;
+		this.alertPath = alertPath || '';
+		this.alertHost = alertHost || '';
+		this.alertPort = alertPort || '';
+		this.alertReceivers = alertReceivers || [];
+		return this;
+	}
 }
 
 const configParser = (new ConfigParser())
@@ -162,7 +173,8 @@ const configParser = (new ConfigParser())
 	.setPort()
 	.setWorkers()
 	.setUpstream()
-	.setCloseTimer();
+	.setCloseTimer()
+	.setAlertConfig();
 
 
 module.exports = {
