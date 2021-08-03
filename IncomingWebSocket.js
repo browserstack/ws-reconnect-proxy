@@ -2,15 +2,13 @@
 
 const EventEmitter = require('events');
 const {
-  kConnectionOpened,
-  kMessageReceived,
-  kError,
-  kClientClosed,
-  kDrainMessage,
-  kDrainCompleted,
-  kUpstreamClosed
+	kConnectionOpened,
+	kMessageReceived,
+	kError,
+	kClientClosed,
+	kDrainMessage,
+	kDrainCompleted
 } = require('./constants');
-const logger = require('./loggerFactory');
 const Queue = require('./Queue');
 
 /**
@@ -23,109 +21,109 @@ const Queue = require('./Queue');
   * object which store the state for the session.
   */
 class IncomingWebSocket extends EventEmitter {
-  constructor(socket, request) {
-    super();
-    this.socket = socket;
-    this.request = request;
-    this.queue = new Queue();
-    this.teardown = false;
-    this.registerListeners();
-  }
+	constructor(socket, request) {
+		super();
+		this.socket = socket;
+		this.request = request;
+		this.queue = new Queue();
+		this.teardown = false;
+		this.registerListeners();
+	}
 
-  /**
+	/**
    * Registers the socket listeners.
    */
-  registerListeners() {
-    this.socket.on('open', this.openHandler.bind(this));
-    this.socket.on('message', this.messageHandler.bind(this));
-    this.socket.on('close', this.closeHandler.bind(this));
-    this.socket.on('error', this.errorHandler.bind(this));
-  }
+	registerListeners() {
+		this.socket.on('open', this.openHandler.bind(this));
+		this.socket.on('message', this.messageHandler.bind(this));
+		this.socket.on('close', this.closeHandler.bind(this));
+		this.socket.on('error', this.errorHandler.bind(this));
+	}
 
-  /**
+	/**
    * Triggers when socket connection is opened.
    */
-  openHandler() {
-    this.emit(kConnectionOpened);
-  }
+	openHandler() {
+		this.emit(kConnectionOpened);
+	}
 
-  /**
+	/**
    * Triggers when message is received on socket.
    *
    * @param {string} msg
    */
-  messageHandler(msg) {
-    this.emit(kMessageReceived, msg);
-  }
+	messageHandler(msg) {
+		this.emit(kMessageReceived, msg);
+	}
 
-  /**
+	/**
    * Triggers when socket connection is closed.
    *
    * @param {number} code
    * @param {string} msg
    */
-  closeHandler(code, msg) {
-    if (!this.teardown) {
-      this.emit(kClientClosed, code, msg);
-    }
+	closeHandler(code, msg) {
+		if (!this.teardown) {
+			this.emit(kClientClosed, code, msg);
+		}
 
-  }
+	}
 
-  /**
+	/**
    * Triggers when error occured on socket.
    */
-  errorHandler() {
-    this.emit(kError);
-  }
+	errorHandler() {
+		this.emit(kError);
+	}
 
-  /**
+	/**
    * Sets the incoming socket.
    *
    * @param {WebSocket} socket
    * @param {object} request
    */
-  setSocket(socket, request) {
-    this.socket = socket;
-    this.request = request;
-    this.registerListeners();
-  }
+	setSocket(socket, request) {
+		this.socket = socket;
+		this.request = request;
+		this.registerListeners();
+	}
 
-  /**
+	/**
    * Adds message to queue.
    *
    * @param {string} msg
    */
-  addToQueue(msg) {
-    this.queue.enqueue(msg);
-  }
+	addToQueue(msg) {
+		this.queue.enqueue(msg);
+	}
 
-  /**
+	/**
    * Drains the queue and emits completed event.
    */
-  drainQueue() {
-    while (!this.queue.isEmpty()) {
-      this.emit(kDrainMessage, this.queue.dequeue());
-    }
-    this.emit(kDrainCompleted);
-  }
+	drainQueue() {
+		while (!this.queue.isEmpty()) {
+			this.emit(kDrainMessage, this.queue.dequeue());
+		}
+		this.emit(kDrainCompleted);
+	}
 
-  /**
+	/**
    * Closes the socket connection.
    */
-  close() {
-    this.teardown = true;
-    this.socket.close(1001, '');
-    this.socket.terminate();
-  }
+	close() {
+		this.teardown = true;
+		this.socket.close(1001, '');
+		this.socket.terminate();
+	}
 
-  /**
+	/**
    * Sends the message on socket.
    *
    * @param {string} msg
    */
-  send(msg) {
-    this.socket.send(msg);
-  }
+	send(msg) {
+		this.socket.send(msg);
+	}
 }
 
 module.exports = IncomingWebSocket;

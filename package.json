@@ -4,7 +4,9 @@
   "description": "Proxy Server that is between a ws server and a ws client. In case of either server / client disconnects graceful or otherwise - initiates/ supports reconnection .",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/nyc ./node_modules/.bin/mocha"
+    "test": "./node_modules/.bin/nyc ./node_modules/.bin/mocha",
+    "eslint:fix": "./node_modules/.bin/eslint *.js --fix",
+    "test:eslint:fix": "./node_modules/.bin/eslint test/*.js --fix"
   },
   "repository": {
     "type": "git",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "chai": "^4.3.4",
+    "eslint": "^7.32.0",
     "mocha": "^9.0.2",
     "nyc": "^15.1.0",
     "sinon": "^11.1.2"
