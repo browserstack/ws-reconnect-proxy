@@ -4,6 +4,7 @@ const querystring = require('querystring');
 const logger = require('./loggerFactory');
 const http = require('http');
 const https = require('https');
+const Buffer = require('buffer');
 const { 
 	config, 
 	CONNECTION_ID_HEADER, 
@@ -30,35 +31,35 @@ function isReconnectHeader(headers) {
 }
 
 const request = (options) => {
-  return new Promise((resolve, reject) => {
-    options.scheme = options.scheme || 'http';
-    const nodeRequest = options.scheme === 'http' ? http.request : https.request;
+	return new Promise((resolve, reject) => {
+		options.scheme = options.scheme || 'http';
+		const nodeRequest = options.scheme === 'http' ? http.request : https.request;
 
-    const req = nodeRequest(options, (res) => {
-      const data = [];
-      res.on('data', (chunk) => {
-        data.push(chunk);
-      });
-      res.on('end', () => {
-        resolve({
-          statusCode: res.statusCode,
-          headers: res.headers,
-          data: Buffer.concat(data).toString(),
-          buffer: Buffer.concat(data),
-        });
-      });
-      res.on('error', (err) => {
-        err.type = 'ResponseError';
-        reject(err);
-      });
-    });
-    req.on('error', (err) => {
-      err.type = 'RequestError';
-      reject(err);
-    });
-    if (typeof options.body !== 'undefined') { req.write(options.body); }
-    req.end();
-  });
+		const req = nodeRequest(options, (res) => {
+			const data = [];
+			res.on('data', (chunk) => {
+				data.push(chunk);
+			});
+			res.on('end', () => {
+				resolve({
+					statusCode: res.statusCode,
+					headers: res.headers,
+					data: Buffer.concat(data).toString(),
+					buffer: Buffer.concat(data),
+				});
+			});
+			res.on('error', (err) => {
+				err.type = 'ResponseError';
+				reject(err);
+			});
+		});
+		req.on('error', (err) => {
+			err.type = 'RequestError';
+			reject(err);
+		});
+		if (typeof options.body !== 'undefined') { req.write(options.body); }
+		req.end();
+	});
 };
 
 async function sendAlert(title, subject, message) {

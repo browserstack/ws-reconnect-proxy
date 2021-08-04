@@ -1,5 +1,6 @@
 'use strict';
 
+const process = require('process');
 const cluster = require('cluster');
 const { config } = require('./constants.js');
 const { watch } = require('fs');
