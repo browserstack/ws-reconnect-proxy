@@ -1,5 +1,5 @@
 const Queue = require('../Queue');
-const { describe, beforeEach, it, context } = require('mocha');
+const { describe, beforeEach, it } = require('mocha');
 const { expect } = require('chai');
 
 describe('Queue', () => {
@@ -22,7 +22,7 @@ describe('Queue', () => {
 		expect(queue.isEmpty()).to.be.equal(false);
 	});
 
-	context('#dequeue', () => {
+	describe('#dequeue', () => {
 		it('#deque', () => {
 			const data = 'DATA';
 			queue.enqueue(data);
