@@ -61,11 +61,13 @@ const request = (options) => {
   });
 };
 
-async function sendAlert(subject, message) {
+async function sendAlert(title, subject, message) {
 	const alertBodyToSend = querystring.stringify({
 		people: config.alertReceivers,
 		subject: subject,
-		message : message
+		message : message,
+		mobile: false,
+		title
 	});
 	const alertOptions = {
 		method: 'POST',
@@ -88,6 +90,7 @@ async function sendAlert(subject, message) {
 		logger.error(`Failed to send alert to ${config.alertReceivers} with subject ${subject}. Error: ${alertError}`);
 	}
 }
+
 module.exports = {
 	createTarget,
 	extractReconnectId,
