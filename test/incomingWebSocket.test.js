@@ -65,7 +65,7 @@ describe('IncomingWebSocket', () => {
   });
 
   describe('#setSocket', () => {
-    newMockServer = new WebSocket.Server({port : 7777})
+    newMockServer = new WebSocket.Server({ port : 7777 });
     newMockSocket = new WebSocket('ws://localhost:7777');
 
     it('should call registerListeners', () => {
@@ -88,10 +88,9 @@ describe('IncomingWebSocket', () => {
 
   describe('#addToQueue', () => {
     it('should increase length of queue by one', () => {
-      incomingWs = new IncomingWebSocket(mockSocket, 'requestData');
-      expect(incomingWs.queue.size()).to.equal(0);
-      incomingWs.addToQueue('First Mesg')
-      expect(incomingWs.queue.size()).to.equal(1);
+      const prevLen = incomingWs.queue.size();
+      incomingWs.addToQueue('Some Mesg')
+      expect(incomingWs.queue.size()).to.equal(prevLen+1);
     });
   });
 
