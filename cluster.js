@@ -48,7 +48,9 @@ if (cluster.isMaster) {
 	});
 
 	cluster.on('exit', (worker, code, signal) => {
-		logger.info(`worker ${worker.process.pid} died with signal ${signal} code ${code}`);
+		logger.info(
+			`worker ${worker.process.pid} died with signal ${signal} code ${code}`
+		);
 		spawnNewWorkers();
 	});
 

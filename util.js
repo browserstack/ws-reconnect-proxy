@@ -5,10 +5,10 @@ const logger = require('./loggerFactory');
 const http = require('http');
 const https = require('https');
 const Buffer = require('buffer');
-const { 
-	config, 
-	CONNECTION_ID_HEADER, 
-	RECONNECT_ID_HEADER
+const {
+	config,
+	CONNECTION_ID_HEADER,
+	RECONNECT_ID_HEADER,
 } = require('./constants');
 
 function createTarget(suffixURL) {
@@ -33,7 +33,8 @@ function isReconnectHeader(headers) {
 const request = (options) => {
 	return new Promise((resolve, reject) => {
 		options.scheme = options.scheme || 'http';
-		const nodeRequest = options.scheme === 'http' ? http.request : https.request;
+		const nodeRequest =
+			options.scheme === 'http' ? http.request : https.request;
 
 		const req = nodeRequest(options, (res) => {
 			const data = [];
@@ -57,7 +58,9 @@ const request = (options) => {
 			err.type = 'RequestError';
 			reject(err);
 		});
-		if (typeof options.body !== 'undefined') { req.write(options.body); }
+		if (typeof options.body !== 'undefined') {
+			req.write(options.body);
+		}
 		req.end();
 	});
 };
@@ -66,9 +69,9 @@ async function sendAlert(title, subject, message) {
 	const alertBodyToSend = querystring.stringify({
 		people: config.alertReceivers,
 		subject: subject,
-		message : message,
+		message: message,
 		mobile: false,
-		title
+		title,
 	});
 	const alertOptions = {
 		method: 'POST',
@@ -81,14 +84,18 @@ async function sendAlert(title, subject, message) {
 			'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
 			accept: 'application/json',
 			'content-length': Buffer.byteLength(alertBodyToSend, 'utf-8'),
-		}
+		},
 	};
 
 	try {
 		const { statusCode } = await request(alertOptions);
-		logger.info(`Sent alert to ${config.alertReceivers} with subject ${subject} status: ${statusCode}`);
+		logger.info(
+			`Sent alert to ${config.alertReceivers} with subject ${subject} status: ${statusCode}`
+		);
 	} catch (alertError) {
-		logger.error(`Failed to send alert to ${config.alertReceivers} with subject ${subject}. Error: ${alertError}`);
+		logger.error(
+			`Failed to send alert to ${config.alertReceivers} with subject ${subject}. Error: ${alertError}`
+		);
 	}
 }
 
@@ -98,5 +105,5 @@ module.exports = {
 	extractConnectionId,
 	isReconnectHeader,
 	request,
-	sendAlert
+	sendAlert,
 };

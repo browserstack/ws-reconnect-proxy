@@ -10,7 +10,7 @@ const {
 	kError,
 	kClientClosed,
 	kDrainMessage,
-	kDrainCompleted
+	kDrainCompleted,
 } = require('../constants');
 
 describe('IncomingWebSocket', () => {
@@ -66,7 +66,7 @@ describe('IncomingWebSocket', () => {
 	});
 
 	describe('#setSocket', () => {
-		newMockServer = new WebSocket.Server({ port : 7777 });
+		newMockServer = new WebSocket.Server({ port: 7777 });
 		newMockSocket = new WebSocket('ws://localhost:7777');
 
 		it('should call registerListeners', () => {
@@ -91,13 +91,13 @@ describe('IncomingWebSocket', () => {
 		it('should increase length of queue by one', () => {
 			const prevLen = incomingWs.queue.size();
 			incomingWs.addToQueue('Some Mesg');
-			expect(incomingWs.queue.size()).to.equal(prevLen+1);
+			expect(incomingWs.queue.size()).to.equal(prevLen + 1);
 		});
 	});
 
 	describe('#send(msg)', () => {
 		it('should send the message on incoming socket', () => {
-			const mesgSpy =  spy();
+			const mesgSpy = spy();
 			incomingWs.socket.send = mesgSpy;
 			incomingWs.send('sample mesg');
 			assert(mesgSpy.calledOnce);
@@ -108,7 +108,7 @@ describe('IncomingWebSocket', () => {
 	describe('#drainQueue', () => {
 		let drainSpy;
 		beforeEach(() => {
-			drainSpy =  spy();
+			drainSpy = spy();
 			incomingWs.emit = drainSpy;
 		});
 
@@ -126,7 +126,7 @@ describe('IncomingWebSocket', () => {
 		});
 
 		it('should emit kDrainCompleted once when queue empty', () => {
-			while(!incomingWs.queue.isEmpty()) {
+			while (!incomingWs.queue.isEmpty()) {
 				incomingWs.queue.deque();
 			}
 			incomingWs.drainQueue();

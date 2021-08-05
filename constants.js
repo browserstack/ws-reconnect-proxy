@@ -1,7 +1,7 @@
 'use strict';
 
 const process = require('process');
-const env = process.env.NODE_ENV || 'dev'; 
+const env = process.env.NODE_ENV || 'dev';
 const config = require('./config.json')[env];
 
 const logger = require('./loggerFactory');
@@ -33,9 +33,8 @@ const DISALLOWED_HEADERS = [
 	'connection',
 	'sec-websocket-key',
 	'sec-websocket-version',
-	'upgrade'
+	'upgrade',
 ];
-
 
 const CONNECTION_ID_HEADER = 'x-connection-id';
 const RECONNECT_ID_HEADER = 'x-reconnect-id';
@@ -51,7 +50,9 @@ class ConfigParser {
 			logger.info('No retry limit specified using default (10)');
 			retryVal = 10;
 		} else if (typeof retryLimit !== 'number') {
-			logger.error(`Invalid value for retrylimit: ${retryLimit} using default (10)`);
+			logger.error(
+				`Invalid value for retrylimit: ${retryLimit} using default (10)`
+			);
 			retryVal = 10;
 		} else {
 			retryVal = retryLimit;
@@ -67,7 +68,9 @@ class ConfigParser {
 			logger.info('No retry delay value sent using default (10)');
 			retryDelayVal = 10;
 		} else if (typeof retryDelay !== 'number') {
-			logger.error(`Inavlid value for retryDelay: ${retryDelay} using default (10)`);
+			logger.error(
+				`Inavlid value for retryDelay: ${retryDelay} using default (10)`
+			);
 			retryDelayVal = 10;
 		} else {
 			retryDelayVal = retryDelay;
@@ -167,7 +170,7 @@ class ConfigParser {
 	}
 }
 
-const configParser = (new ConfigParser())
+const configParser = new ConfigParser()
 	.setupHooks()
 	.setupRetries()
 	.setupRetryDelay()
@@ -176,7 +179,6 @@ const configParser = (new ConfigParser())
 	.setUpstream()
 	.setCloseTimer()
 	.setAlertConfig();
-
 
 module.exports = {
 	config: configParser,
@@ -204,5 +206,5 @@ module.exports = {
 	kDrainCompleted,
 	kReleaseTap,
 	kAddNewContext,
-	kUpstreamRestart
+	kUpstreamRestart,
 };

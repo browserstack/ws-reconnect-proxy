@@ -7,19 +7,19 @@ const { kAddNewContext } = require('../constants');
 
 describe('Proxy', () => {
 	before(() => {
-		this.upstreamUrl = 'ws://localhost:8999/';    
+		this.upstreamUrl = 'ws://localhost:8999/';
 		this.socket = {
 			close: spy(),
 			terminate: spy(),
 			on: spy(),
-			send: spy()
+			send: spy(),
 		};
-        
+
 		this.request = {
 			url: this.upstreamUrl,
 			headers: {
-				'x-connection-id': 'CONNECTION_ID'
-			}
+				'x-connection-id': 'CONNECTION_ID',
+			},
 		};
 		this.proxy = new Proxy();
 	});
@@ -30,7 +30,7 @@ describe('Proxy', () => {
 
 	it('should set connection id', () => {
 		this.proxy.connectionHandler(this.socket, this.request);
-		expect(this.proxy.contexts.has('CONNECTION_ID')).to.be.equal(true) ;
+		expect(this.proxy.contexts.has('CONNECTION_ID')).to.be.equal(true);
 	});
 
 	it('should add new context', () => {
@@ -47,24 +47,28 @@ describe('Proxy', () => {
 			url: this.upstreamUrl,
 			headers: {
 				'x-reconnect-id': 'DUMMY_CONNECTION_ID',
-				'x-connection-id': 'DUMMY_CONNECTION_ID'
-			}
+				'x-connection-id': 'DUMMY_CONNECTION_ID',
+			},
 		};
 		const context = new Context(request.headers['x-connection-id']);
 		this.proxy.contexts.set(request.headers['x-connection-id'], context);
 		this.proxy.connectionHandler(this.socket, request);
-		expect(this.proxy.contexts.has(request.headers['x-reconnect-id'])).to.be.equal(true);
+		expect(
+			this.proxy.contexts.has(request.headers['x-reconnect-id'])
+		).to.be.equal(true);
 	});
-    
+
 	it('should not have connection id', () => {
 		const request = {
 			url: this.upstreamUrl,
 			headers: {
 				'x-reconnect-id': 'TEST_CONNECTION_ID',
-				'x-connection-id': 'TEST_CONNECTION_ID'
-			}
+				'x-connection-id': 'TEST_CONNECTION_ID',
+			},
 		};
 		this.proxy.connectionHandler(this.socket, request);
-		expect(this.proxy.contexts.has(request.headers['x-reconnect-id'])).to.be.equal(false);
+		expect(
+			this.proxy.contexts.has(request.headers['x-reconnect-id'])
+		).to.be.equal(false);
 	});
 });

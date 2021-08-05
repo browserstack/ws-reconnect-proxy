@@ -2,9 +2,7 @@ const { config } = require('../constants');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 
-
 describe('ConfigParser', () => {
-
 	it('#setupRetries', () => {
 		expect(config.setupRetries()).to.be.equal(config);
 	});

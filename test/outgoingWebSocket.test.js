@@ -182,7 +182,7 @@ describe('OutgoingWebSocket', () => {
 			expect(retrySpy.callCount).to.equal(0);
 			expect(emitSpy.callCount).to.equal(0);
 		});
-    
+
 		it('should emit kUpstreamClosed if shouldRetry false and msg !== SERVICE_RESTART', () => {
 			outgoingWs.shouldRetry = false;
 			outgoingWs.closeHandler(1001, 'not SERVICE_RESTART');
@@ -225,14 +225,14 @@ describe('OutgoingWebSocket', () => {
 		it('should increase length of queue by one', () => {
 			const prevLen = outgoingWs.queue.size();
 			outgoingWs.addToQueue('Some Mesg');
-			expect(outgoingWs.queue.size()).to.equal(prevLen+1);
+			expect(outgoingWs.queue.size()).to.equal(prevLen + 1);
 		});
 	});
 
 	describe('#drainQueue', () => {
 		let drainSpy;
 		beforeEach(() => {
-			drainSpy =  spy();
+			drainSpy = spy();
 			outgoingWs.emit = drainSpy;
 		});
 
@@ -250,7 +250,7 @@ describe('OutgoingWebSocket', () => {
 		});
 
 		it('should emit kDrainCompleted once when queue empty', () => {
-			while(!outgoingWs.queue.isEmpty()) {
+			while (!outgoingWs.queue.isEmpty()) {
 				outgoingWs.queue.deque();
 			}
 			outgoingWs.drainQueue();
@@ -260,10 +260,10 @@ describe('OutgoingWebSocket', () => {
 	});
 
 	describe('#setConnectionId', () => {
-		it('should call util\'s extractConnectionId method', () => {
+		it("should call util's extractConnectionId method", () => {
 			const extractIdFun = spy(utilFn, 'extractConnectionId');
 			outgoingWs.headers = {
-				'x-connection-id': '123_id'
+				'x-connection-id': '123_id',
 			};
 			outgoingWs.setConnectionId();
 			expect(extractIdFun.calledOnce);
@@ -272,7 +272,7 @@ describe('OutgoingWebSocket', () => {
 		it('should update connectionId', () => {
 			outgoingWs.connectionId = 'old_id';
 			outgoingWs.headers = {
-				'x-connection-id': 'new_id'
+				'x-connection-id': 'new_id',
 			};
 			outgoingWs.setConnectionId();
 			expect(outgoingWs.connectionId).to.eq('new_id');
@@ -282,12 +282,12 @@ describe('OutgoingWebSocket', () => {
 	describe('#setHeaders', () => {
 		it('should remove disallowed headers and set the headers', () => {
 			const headers = {
-				'host': 'localhost',
-				'connection': 'some-connection',
+				host: 'localhost',
+				connection: 'some-connection',
 				'sec-websocket-key': 'some-key-123',
 				'sec-websocket-version': 'some-version-1.0.0',
-				'upgrade': 'false',
-				'notdisallowed': 'should remain'
+				upgrade: 'false',
+				notdisallowed: 'should remain',
 			};
 			outgoingWs.setHeaders(headers);
 			expect(outgoingWs.headers).to.be.an.instanceof(Object);

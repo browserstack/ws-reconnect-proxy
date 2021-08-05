@@ -7,7 +7,7 @@ const Context = require('./Context');
 const {
 	isReconnectHeader,
 	extractConnectionId,
-	extractReconnectId
+	extractReconnectId,
 } = require('./util');
 
 /**
@@ -17,10 +17,9 @@ const {
  * Registers the contexts holding all the connections which are created.
  */
 class Proxy {
-
 	/**
-   * Creates the Proxy.
-   */
+	 * Creates the Proxy.
+	 */
 	constructor() {
 		this.server = new WebSocket.Server({ port: config.port });
 		this.contexts = new Map();
@@ -28,11 +27,11 @@ class Proxy {
 	}
 
 	/**
-   * Triggers when connection is established on socket.
-   *
-   * @param {WebSocket} socket
-   * @param {object} request
-   */
+	 * Triggers when connection is established on socket.
+	 *
+	 * @param {WebSocket} socket
+	 * @param {object} request
+	 */
 	connectionHandler(socket, request) {
 		if (isReconnectHeader(request.headers)) {
 			const reconnectId = extractReconnectId(request.headers);

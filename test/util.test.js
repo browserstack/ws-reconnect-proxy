@@ -1,4 +1,9 @@
-const { createTarget, extractReconnectId, extractConnectionId, isReconnectHeader } = require('../util');
+const {
+	createTarget,
+	extractReconnectId,
+	extractConnectionId,
+	isReconnectHeader,
+} = require('../util');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 
@@ -11,7 +16,7 @@ describe('#createTarget', () => {
 describe('#extractReconnectId', () => {
 	it('should return reconnect id', () => {
 		const headers = {
-			'x-reconnect-id': 'TEST123'
+			'x-reconnect-id': 'TEST123',
 		};
 		expect(extractReconnectId(headers)).to.be.equal('TEST123');
 	});
@@ -25,7 +30,7 @@ describe('#extractReconnectId', () => {
 describe('#extractConnectionId', () => {
 	it('should return connection id', () => {
 		const headers = {
-			'x-connection-id': 'TEST123'
+			'x-connection-id': 'TEST123',
 		};
 		expect(extractConnectionId(headers)).to.be.equal('TEST123');
 	});
@@ -39,7 +44,7 @@ describe('#extractConnectionId', () => {
 describe('#isReconnectHeader', () => {
 	it('should return true if reconnect header present', () => {
 		const headers = {
-			'x-reconnect-id': 'TEST123'
+			'x-reconnect-id': 'TEST123',
 		};
 		expect(isReconnectHeader(headers)).to.be.equal(true);
 	});

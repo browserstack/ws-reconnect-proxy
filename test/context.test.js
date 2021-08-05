@@ -5,19 +5,19 @@ const { assert, expect } = require('chai');
 const WebSocket = require('ws');
 const { spy, useFakeTimers } = require('sinon');
 
-const { 
-	kDequeueMessage, 
-	kMessageReceived, 
-	kDrainCompleted, 
-	kError, 
-	kQueueMessage, 
-	kSendMessage, 
-	kDrainMessage, 
-	kUpstreamRestart, 
-	kReleaseTap, 
-	kClientClosed, 
-	kAddNewContext, 
-	kConnectionOpened 
+const {
+	kDequeueMessage,
+	kMessageReceived,
+	kDrainCompleted,
+	kError,
+	kQueueMessage,
+	kSendMessage,
+	kDrainMessage,
+	kUpstreamRestart,
+	kReleaseTap,
+	kClientClosed,
+	kAddNewContext,
+	kConnectionOpened,
 } = require('../constants');
 
 describe('Context', () => {
@@ -28,17 +28,17 @@ describe('Context', () => {
 	beforeEach(() => {
 		this.clock = useFakeTimers();
 		context = new Context(connectionId);
-		mockServer = new WebSocket.Server({port: 8999});
+		mockServer = new WebSocket.Server({ port: 8999 });
 		this.socket = {
 			close: spy(),
 			terminate: spy(),
 			on: spy(),
-			send: spy()
+			send: spy(),
 		};
-        
+
 		this.request = {
 			url: upstreamUrl,
-			headers: {}
+			headers: {},
 		};
 		context.addNewConnection(this.socket, this.request);
 		this.incomingSocket = context.incomingSocket;
@@ -55,7 +55,6 @@ describe('Context', () => {
 			expect(this.incomingSocket).not.to.be.undefined;
 			done();
 		});
-    
 
 		it('should set socket', (done) => {
 			const context = new Context('TEST1234');
@@ -66,11 +65,9 @@ describe('Context', () => {
 			assert(context.incomingSocket.setSocket.calledOnce);
 			done();
 		});
-    
-	});    
+	});
 
 	describe('incomingSocket', () => {
-
 		it('should emit connection opened', () => {
 			this.incomingSocket.on(kConnectionOpened, () => {
 				this.outgoingSocket.on(kDequeueMessage, () => {
@@ -80,7 +77,7 @@ describe('Context', () => {
 			});
 			this.incomingSocket.emit(kConnectionOpened);
 		});
-        
+
 		it('should queue messages', (done) => {
 			this.incomingSocket.on(kMessageReceived, () => {
 				assert(context.incomingLock);
@@ -91,7 +88,7 @@ describe('Context', () => {
 		});
 
 		it('should emit event dequeue message', (done) => {
-			const dequeueSpy =  spy();
+			const dequeueSpy = spy();
 			this.incomingSocket.on(kDequeueMessage, dequeueSpy);
 			this.incomingSocket.emit(kDequeueMessage);
 			assert(dequeueSpy.calledOnce);
@@ -99,7 +96,7 @@ describe('Context', () => {
 		});
 
 		it('should send message', (done) => {
-			const sendSpy =  spy();
+			const sendSpy = spy();
 			this.incomingSocket.send = sendSpy;
 			this.incomingSocket.on(kSendMessage, () => {
 				assert(this.incomingSocket.send.calledOnce);
@@ -109,12 +106,11 @@ describe('Context', () => {
 		});
 
 		it('should close client', (done) => {
-            
 			this.incomingSocket.on(kClientClosed, (code, msg) => {
 				this.outgoingSocket.on(kQueueMessage, () => {
 					assert(context.incomingLock);
 				});
-                
+
 				const closeSpy = spy();
 				this.outgoingSocket.close = closeSpy;
 				this.clock.tick(15000);
@@ -122,7 +118,7 @@ describe('Context', () => {
 				expect(msg).to.be.equal('CLOSED');
 				assert(closeSpy.calledOnce);
 			});
-            
+
 			this.incomingSocket.emit(kClientClosed, 1006, 'CLOSED');
 			done();
 		});
@@ -133,11 +129,9 @@ describe('Context', () => {
 			this.incomingSocket.emit(kError);
 			assert(errorSpy.calledOnce);
 		});
-
 	});
 
 	describe('outgoingWebsocket', () => {
-
 		it('should release tap', (done) => {
 			context.outgoingSocket.on(kReleaseTap, () => {
 				this.incomingSocket.on(kDrainMessage, () => {
@@ -154,7 +148,7 @@ describe('Context', () => {
 						assert(this.incomingSocket.send.calledOnce);
 					});
 				});
-            
+
 				expect(context.outgoingLock).to.be.equal(false);
 				expect(context.incomingLock).to.be.equal(false);
 			});
@@ -180,7 +174,7 @@ describe('Context', () => {
 				this.outgoingSocket.emit(kMessageReceived);
 			});
 			this.outgoingSocket.emit(kQueueMessage);
-            
+
 			done();
 		});
 
@@ -210,16 +204,16 @@ describe('Context', () => {
 		});
 
 		it('should emit event dequeue message', (done) => {
-			const dequeueSpy =  spy();
+			const dequeueSpy = spy();
 			this.outgoingSocket.on(kDequeueMessage, dequeueSpy);
-			this.outgoingSocket.on(kDrainCompleted, ()=> {
+			this.outgoingSocket.on(kDrainCompleted, () => {
 				expect(context.outgoingLock).to.be.equal(false);
 			});
 
-			this.outgoingSocket.on(kDrainCompleted, ()=> {
+			this.outgoingSocket.on(kDrainCompleted, () => {
 				expect(context.outgoingLock).to.be.equal(false);
 			});
-    
+
 			const sendSpy = spy();
 			this.incomingSocket.send = sendSpy;
 			this.incomingSocket.on(kSendMessage, () => {
@@ -232,9 +226,8 @@ describe('Context', () => {
 		});
 
 		it('should emit drain message', (done) => {
-            
 			this.outgoingSocket.on(kDrainMessage, () => {
-				this.incomingSocket.on(kSendMessage, msg => {
+				this.incomingSocket.on(kSendMessage, (msg) => {
 					const sendSpy = spy();
 					this.incomingSocket.send = sendSpy;
 					expect(msg).to.be.equal('DRAIN MESSAGE');
@@ -243,16 +236,15 @@ describe('Context', () => {
 				});
 			});
 			this.outgoingSocket.emit(kDrainMessage, 'DRAIN MESSAGE');
-            
+
 			done();
 		});
 
-        
 		it('should emit upstream restart', (done) => {
 			this.outgoingSocket.on(kUpstreamRestart, (code, msg) => {
 				expect(code).to.be.equal(1005);
 				expect(msg).to.be.equal('Service Restart');
-				this.incomingSocket.on(kQueueMessage, () => {    
+				this.incomingSocket.on(kQueueMessage, () => {
 					assert(context.incomingLock);
 				});
 			});
@@ -260,15 +252,13 @@ describe('Context', () => {
 			done();
 		});
 
-
 		it('should emit upstream restart', (done) => {
-			this.outgoingSocket.on(kAddNewContext, connectionId => {
+			this.outgoingSocket.on(kAddNewContext, (connectionId) => {
 				expect(connectionId).to.be.equal('NEW_CONNECTION_ID');
 			});
 			this.outgoingSocket.emit(kAddNewContext, 'NEW_CONNECTION_ID');
 			done();
 		});
-
 	});
 
 	describe('#setConnectionId', () => {

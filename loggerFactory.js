@@ -8,7 +8,7 @@ Logger.level = process.env.NODE_ENV === 'prod' ? 'info' : 'debug';
 
 function getDefaultObjects() {
 	return {
-		pid: process.pid
+		pid: process.pid,
 	};
 }
 
