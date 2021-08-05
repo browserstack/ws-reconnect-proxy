@@ -41,7 +41,7 @@ const OUTGOING = '[OUTGOING]';
 const INCOMING = '[INCOMING]';
 
 class ConfigParser {
-	setupRetries() {
+	setRetries() {
 		const { retryLimit } = config;
 		let retryVal;
 		if (retryLimit === 'undefined') {
@@ -59,7 +59,7 @@ class ConfigParser {
 		return this;
 	}
 
-	setupRetryDelay() {
+	setRetryDelay() {
 		const { retryDelay } = config;
 		let retryDelayVal;
 		if (typeof retryDelay === 'undefined') {
@@ -77,7 +77,7 @@ class ConfigParser {
 		return this;
 	}
 
-	setupHooks() {
+	setHooks() {
 		const { hooksInfo = {} } = config;
 		if (Object.keys(hooksInfo).length === 0) {
 			logger.info('Alert hook not setup');
@@ -140,9 +140,9 @@ class ConfigParser {
 }
 
 const configParser = new ConfigParser()
-	.setupHooks()
-	.setupRetries()
-	.setupRetryDelay()
+	.setHooks()
+	.setRetries()
+	.setRetryDelay()
 	.setPort()
 	.setWorkers()
 	.setUpstream()
@@ -160,7 +160,6 @@ module.exports = {
 	OUTGOING,
 	kUpstreamClosed,
 	kReceivedReply,
-	kReceiver,
 	kStartConnection,
 	kMessageReceived,
 	kError,

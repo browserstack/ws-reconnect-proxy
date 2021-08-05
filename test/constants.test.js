@@ -3,20 +3,16 @@ const { describe, it } = require('mocha');
 const { expect } = require('chai');
 
 describe('ConfigParser', () => {
-	it('#setupRetries', () => {
-		expect(config.setupRetries()).to.be.equal(config);
+	it('#setRetries', () => {
+		expect(config.setRetries()).to.be.equal(config);
 	});
 
-	it('#setupRetryDelay', () => {
-		expect(config.setupRetryDelay()).to.be.equal(config);
+	it('#setRetryDelay', () => {
+		expect(config.setRetryDelay()).to.be.equal(config);
 	});
 
-	it('#setupRetryDelay', () => {
-		expect(config.decideMode()).to.be.equal(config);
-	});
-
-	it('#setupHooks', () => {
-		expect(config.setupHooks()).to.be.equal(config);
+	it('#setHooks', () => {
+		expect(config.setHooks()).to.be.equal(config);
 	});
 
 	it('#setWorkers', () => {
@@ -29,5 +25,13 @@ describe('ConfigParser', () => {
 
 	it('#setUpstream', () => {
 		expect(config.setUpstream()).to.be.equal(config);
+	});
+
+	it('#setCloseTimer', () => {
+		expect(config.setCloseTimer()).to.be.equal(config);
+	});
+
+	it('#setAlertConfig', () => {
+		expect(config.setAlertConfig()).to.be.equal(config);
 	});
 });
