@@ -90,7 +90,7 @@ class Context extends EventEmitter {
 
 		this.incomingSocket.on(kQueueMessage, () => {
 			this.incomingLock = true;
-			logger.debug(`${INCOMING} [${this.connectionId}] [QUEUE] - STARTED`);
+			logger.info(`${INCOMING} [${this.connectionId}] [QUEUE] - STARTED`);
 		});
 
 		this.incomingSocket.on(kSendMessage, (msg) => {
@@ -112,7 +112,7 @@ class Context extends EventEmitter {
 		});
 
 		this.incomingSocket.on(kClientClosed, (code, msg) => {
-			logger.debug(
+			logger.info(
 				`${INCOMING} [${this.connectionId}] [CLOSE] - Socket closed with ${code} and ${msg}`
 			);
 			this.outgoingSocket.emit(kQueueMessage);
@@ -129,7 +129,7 @@ class Context extends EventEmitter {
 		this.incomingSocket.on(kDrainCompleted, () => {
 			if (this.incomingLock) {
 				this.incomingLock = false;
-				logger.debug(`${INCOMING} [${this.connectionId}] [QUEUE] - COMPLETED`);
+				logger.info(`${INCOMING} [${this.connectionId}] [QUEUE] - COMPLETED`);
 			}
 		});
 	}
@@ -160,7 +160,7 @@ class Context extends EventEmitter {
 
 		this.outgoingSocket.on(kQueueMessage, () => {
 			this.outgoingLock = true;
-			logger.debug(`${OUTGOING} [${this.connectionId}] [QUEUE] - STARTED`);
+			logger.info(`${OUTGOING} [${this.connectionId}] [QUEUE] - STARTED`);
 		});
 
 		this.outgoingSocket.on(kSendMessage, (msg) => {
@@ -175,14 +175,14 @@ class Context extends EventEmitter {
 		this.outgoingSocket.on(kUpstreamClosed, (code, msg) => {
 			this.incomingSocket.close();
 			this.emit(kCleanup, this.connectionId);
-			logger.debug(
+			logger.info(
 				`${OUTGOING} [${this.connectionId}] [CLOSE] - Socket closed with ${code} and ${msg}`
 			);
 		});
 
 		this.outgoingSocket.on(kUpstreamRestart, (code, msg) => {
 			this.incomingSocket.emit(kQueueMessage);
-			logger.debug(
+			logger.info(
 				`${OUTGOING} [${this.connectionId}] [RESTART] ${code} - ${msg}`
 			);
 		});
@@ -199,7 +199,7 @@ class Context extends EventEmitter {
 		this.outgoingSocket.on(kDrainCompleted, () => {
 			if (this.outgoingLock) {
 				this.outgoingLock = false;
-				logger.debug(`${OUTGOING} [${this.connectionId}] [QUEUE]- COMPLETED`);
+				logger.info(`${OUTGOING} [${this.connectionId}] [QUEUE]- COMPLETED`);
 			}
 		});
 	}

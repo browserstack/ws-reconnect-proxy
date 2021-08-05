@@ -49,7 +49,7 @@ class OutgoingWebSocket extends EventEmitter {
 	 * Adds the Outgoing socket & registers the listeners
 	 */
 	addSocket() {
-		logger.debug(`Trying to connect with socket: ${this.url}`);
+		logger.info(`Trying to connect with socket: ${this.url}`);
 		this.socket = new WebSocket(this.url, {
 			headers: {
 				...this.headers,
@@ -74,7 +74,7 @@ class OutgoingWebSocket extends EventEmitter {
 	 */
 	openHandler() {
 		if (this.reconnectInfo !== null) {
-			logger.debug(
+			logger.info(
 				`${OUTGOING} [${this.connectionId}] [RECONNECT] - ${this.reconnectInfo}`
 			);
 			this.send(this.reconnectInfo);
@@ -144,7 +144,7 @@ class OutgoingWebSocket extends EventEmitter {
 				await sleep(config.retryDelayVal);
 				this.addSocket();
 			}
-			logger.debug(
+			logger.info(
 				`${OUTGOING} [${this.connectionId}] [RETRIES LEFT: ${this.retryCount}] `
 			);
 		}

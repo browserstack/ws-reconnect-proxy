@@ -39,7 +39,7 @@ class Proxy {
 				const context = this.contexts.get(reconnectId);
 				context.addNewConnection(socket, request);
 			} else {
-				logger.debug(`[${reconnectId}] - Unable to find reconnectId`);
+				logger.info(`[${reconnectId}] - Unable to find reconnectId`);
 			}
 		} else {
 			const connId = extractConnectionId(request.headers);
