@@ -2,7 +2,7 @@
 
 const process = require('process');
 const pino = require('pino');
-const Logger = pino({}, pino.destination('./tmp/proxy.log'));
+const Logger = pino({}, pino.destination('./logs/proxy.log'));
 
 Logger.level = process.env.NODE_ENV === 'prod' ? 'info' : 'debug';
 

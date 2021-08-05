@@ -6,8 +6,6 @@ const config = require('./config.json')[env];
 
 const logger = require('./loggerFactory');
 
-const kSender = Symbol('kSender');
-const kReceiver = Symbol('kReceiver');
 const kUpstreamClosed = Symbol('kUpstreamClosed');
 const kReceivedReply = Symbol('kReceivedReply');
 const kStartConnection = Symbol('kStartConnection');
@@ -79,21 +77,6 @@ class ConfigParser {
 		return this;
 	}
 
-	decideMode() {
-		if (this.mode === 0) {
-			this.state = kSender;
-			this.isSender = true;
-			this.isReceiver = false;
-		}
-
-		if (this.mode === 1) {
-			this.state = kReceiver;
-			this.isSender = false;
-			this.isReceiver = true;
-		}
-		return this;
-	}
-
 	setupHooks() {
 		const { hooksInfo = {} } = config;
 		if (Object.keys(hooksInfo).length === 0) {
@@ -131,20 +114,6 @@ class ConfigParser {
 			portVal = port;
 		}
 		this.port = portVal;
-		return this;
-	}
-
-	setReceiverUpstream() {
-		const { receiverUpstream } = config;
-		if (this.isSender) {
-			logger.info('Not using receiver upstream in sender mode');
-			this.receiverUpstream = null;
-		} else if (typeof receiverUpstream !== 'object') {
-			logger.error('Invalid type for receiverUpstream using default object {}');
-			this.receiverUpstream = {};
-		} else {
-			this.receiverUpstream = receiverUpstream;
-		}
 		return this;
 	}
 
@@ -189,7 +158,6 @@ module.exports = {
 	RECONNECT_ID_HEADER,
 	INCOMING,
 	OUTGOING,
-	kSender,
 	kUpstreamClosed,
 	kReceivedReply,
 	kReceiver,
