@@ -112,7 +112,6 @@ class IncomingWebSocket extends EventEmitter {
    */
 	close() {
 		this.teardown = true;
-		this.socket.close(1001, '');
 		this.socket.terminate();
 	}
 

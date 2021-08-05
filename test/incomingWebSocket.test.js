@@ -136,19 +136,15 @@ describe('IncomingWebSocket', () => {
 	});
 
 	describe('#close', () => {
-		let closeSpy;
+		let terminateSpy;
 		before(() => {
-			closeSpy = spy();
-			incomingWs.socket.close = closeSpy;
+			terminateSpy = spy();
+			incomingWs.socket.terminate = terminateSpy;
 			incomingWs.close();
 		});
 
-		it('should close the websocket', () => {
-			assert(closeSpy.calledOnce);
-		});
-
-		it('should close with code 1001 and empty string as mesg', () => {
-			assert(closeSpy.calledWith(1001, ''));
+		it('should terminate the websocket', () => {
+			assert(terminateSpy.calledOnce);
 		});
 
 		it('should set teardown to true', () => {
