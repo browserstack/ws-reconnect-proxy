@@ -1,4 +1,4 @@
-const Queue = require('../Queue');
+const Queue = require('../../lib/core/Queue');
 const { describe, beforeEach, it } = require('mocha');
 const { expect } = require('chai');
 

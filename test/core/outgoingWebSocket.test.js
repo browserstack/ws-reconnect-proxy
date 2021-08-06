@@ -1,8 +1,8 @@
 const { describe, beforeEach, before, it } = require('mocha');
 const { expect, assert } = require('chai');
 const { spy } = require('sinon');
-const Queue = require('../Queue');
-const OutgoingWebSocket = require('../OutgoingWebSocket');
+const Queue = require('../../lib/core/Queue');
+const OutgoingWebSocket = require('../../lib/core/OutgoingWebSocket');
 const {
 	config,
 	kConnectionOpened,
@@ -15,8 +15,8 @@ const {
 	kDrainCompleted,
 	SERVICE_RESTART,
 	RECONNECT,
-} = require('../constants');
-const utilFn = require('../util');
+} = require('../../lib/config/constants');
+const utilFn = require('../../lib/util/util');
 
 describe('OutgoingWebSocket', () => {
 	let outgoingWs, upstreamUrl, headers;
@@ -260,7 +260,7 @@ describe('OutgoingWebSocket', () => {
 	});
 
 	describe('#setConnectionId', () => {
-		it("should call util's extractConnectionId method", () => {
+		it('should call util extractConnectionId method', () => {
 			const extractIdFun = spy(utilFn, 'extractConnectionId');
 			outgoingWs.headers = {
 				'x-connection-id': '123_id',

@@ -4,11 +4,14 @@
 		{
 			"type": "pwa-node",
 			"request": "launch",
-			"name": "Launch Program",
+			"name": "ws-reconnect-proxy",
 			"skipFiles": ["<node_internals>/**"],
 			"program": "${workspaceFolder}/cluster.js",
 			"outputCapture": "std",
-			"console": "internalConsole"
+			"console": "internalConsole",
+			"env": {
+				"NODE_ENV": "dev"
+			}
 		}
 	]
 }

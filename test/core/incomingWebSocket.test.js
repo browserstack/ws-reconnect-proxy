@@ -2,8 +2,8 @@ const WebSocket = require('ws');
 const { expect, assert } = require('chai');
 const { spy } = require('sinon');
 const { describe, beforeEach, before, it, after } = require('mocha');
-const IncomingWebSocket = require('../IncomingWebSocket');
-const Queue = require('../Queue');
+const IncomingWebSocket = require('../../lib/core/IncomingWebSocket');
+const Queue = require('../../lib/core/Queue');
 const {
 	kConnectionOpened,
 	kMessageReceived,
@@ -11,7 +11,7 @@ const {
 	kClientClosed,
 	kDrainMessage,
 	kDrainCompleted,
-} = require('../constants');
+} = require('../../lib/config/constants');
 
 describe('IncomingWebSocket', () => {
 	let mockSocket, incomingWs, newMockServer, newMockSocket;

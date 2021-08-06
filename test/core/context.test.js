@@ -1,4 +1,4 @@
-const Context = require('../Context');
+const Context = require('../../lib/core/Context');
 const { EventEmitter } = require('events');
 const { describe, beforeEach, it, afterEach } = require('mocha');
 const { assert, expect } = require('chai');
@@ -18,7 +18,7 @@ const {
 	kClientClosed,
 	kAddNewContext,
 	kConnectionOpened,
-} = require('../constants');
+} = require('../../lib/config/constants');
 
 describe('Context', () => {
 	let context;

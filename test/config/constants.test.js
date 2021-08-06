@@ -1,4 +1,4 @@
-const { config } = require('../constants');
+const { config } = require('../../lib/config/constants');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 

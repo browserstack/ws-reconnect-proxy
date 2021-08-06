@@ -3,7 +3,7 @@ const {
 	extractReconnectId,
 	extractConnectionId,
 	isReconnectHeader,
-} = require('../util');
+} = require('../../lib/util/util');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 

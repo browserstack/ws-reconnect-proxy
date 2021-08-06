@@ -1,9 +1,9 @@
-const Proxy = require('../Proxy');
-const Context = require('../Context');
+const Proxy = require('../../lib/core/Proxy');
+const Context = require('../../lib/core/Context');
 const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
 const { spy } = require('sinon');
-const { kAddNewContext } = require('../constants');
+const { kAddNewContext } = require('../../lib/config/constants');
 
 describe('Proxy', () => {
 	before(() => {
