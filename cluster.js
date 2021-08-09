@@ -39,15 +39,6 @@ function spawnNewWorkers() {
 	}
 }
 
-let currTime = Date.now();
-watch('tmp/restart.txt', () => {
-	if (Date.now() > currTime) {
-		currTime = Date.now();
-		disconnectOldWorkers();
-		spawnNewWorkers();
-	}
-});
-
 if (cluster.isMaster) {
 	cluster.on('online', function (worker) {
 		logger.info(`Worker ${worker.process.pid} is online`);
@@ -61,6 +52,15 @@ if (cluster.isMaster) {
 	});
 
 	spawnNewWorkers();
+
+	let currTime = Date.now();
+	watch('tmp/restart.txt', () => {
+		if (Date.now() > currTime) {
+			currTime = Date.now();
+			disconnectOldWorkers();
+			spawnNewWorkers();
+		}
+	});
 } else {
 	new Proxy();
 }
