@@ -51,7 +51,6 @@ describe('IncomingWebSocket', () => {
 			incomingWs.on('close', () => {
 				const closeSpy = spy();
 				incomingWs.closeHandler = closeSpy;
-				console.log('here');
 				assert(closeSpy.calledOnce);
 			});
 		});

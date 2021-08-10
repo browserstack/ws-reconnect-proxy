@@ -1,27 +1,30 @@
 {
-  "prod" : {
-    "workers": 3,
-    "port": 9124,
-    "upstream": "ws://localhost:8080",
-    "retryDelay": 10000,
-    "closeTimer": 15000,
-    "alertPath": "/somepath",
-    "alertHost": "127.0.0.1",
-    "alertPort": 9555,
-    "alertReceivers": ["test"]
-  },
-  "test": {
-    "workers": 1,
-    "port": 8999,
-    "upstream": "ws://localhost:8999",
-    "retryDelay": 10000,
-    "closeTimer": 15000
-  },
-  "dev": {
-    "workers": 3,
-    "port": 9124,
-    "upstream": "ws://localhost:8080",
-    "retryDelay": 10000,
-    "closeTimer": 15000
-  }
+	"prod": {
+		"workers": 1,
+		"port": 9124,
+		"upstream": "ws://localhost:9125",
+		"retryDelay": 10000,
+		"closeTimer": 15000,
+		"enableInstrumentation": true,
+    "instrumentationTimer": 60000
+	},
+	"test": {
+		"workers": 1,
+		"port": 8999,
+		"upstream": "ws://localhost:8999",
+		"retryDelay": 10000,
+		"closeTimer": 15000,
+		"enableInstrumentation": true,
+    "instrumentationTimer": 60000
+	},
+	"dev": {
+		"workers": 1,
+		"port": 9124,
+		"upstream": "ws://localhost:9125",
+		"retryDelay": 10000,
+		"closeTimer": 15000,
+		"workerKillTimer": 10000,
+		"enableInstrumentation": true,
+    "instrumentationTimer": 60000
+	}
 }

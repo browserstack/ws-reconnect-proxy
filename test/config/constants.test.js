@@ -31,7 +31,15 @@ describe('ConfigParser', () => {
 		expect(config.setCloseTimer()).to.be.equal(config);
 	});
 
-	it('#setAlertConfig', () => {
-		expect(config.setAlertConfig()).to.be.equal(config);
+	it('#setInstrumentation', () => {
+		expect(config.setInstrumentation()).to.be.equal(config);
+	});
+
+	it('#setInstrumentationTimer', () => {
+		expect(config.setInstrumentationTimer()).to.be.equal(config);
+	});
+
+	it('#setRootConfig', () => {
+		expect(config.setRootConfig()).to.be.equal(config);
 	});
 });
