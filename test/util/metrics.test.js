@@ -7,7 +7,7 @@ const {
 	incrErrorConnectionCount,
 	decrActiveConnectionCount,
 	getMetrics,
-  setMetrics,
+	setMetrics,
 } = require('../../lib/util/metrics');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
