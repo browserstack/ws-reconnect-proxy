@@ -48,7 +48,7 @@ if (cluster.isMaster) {
 		logger.info(
 			`worker ${worker.process.pid} died with signal ${signal} code ${code}`
 		);
-		spawnNewWorkers();
+		if (activeWorkers.length == 0) spawnNewWorkers();
 	});
 
 	spawnNewWorkers();
