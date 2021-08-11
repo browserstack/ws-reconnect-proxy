@@ -2,12 +2,13 @@ const Proxy = require('../../lib/core/Proxy');
 const Context = require('../../lib/core/Context');
 const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
-const { spy } = require('sinon');
+const { spy, stub } = require('sinon');
 const { kAddNewContext } = require('../../lib/config/constants');
+const http = require('http');
 
 describe('Proxy', () => {
 	before(() => {
-		this.upstreamUrl = 'ws://localhost:8999/';
+		this.upstreamUrl = 'ws://localhost:8991/';
 		this.socket = {
 			close: spy(),
 			terminate: spy(),
@@ -16,16 +17,29 @@ describe('Proxy', () => {
 		};
 
 		this.request = {
+			pipe: spy(),
 			url: this.upstreamUrl,
 			headers: {
 				'x-connection-id': 'CONNECTION_ID',
 			},
 		};
+
+		this.response = {
+			writeHead: spy(),
+		};
+
 		this.proxy = new Proxy();
 	});
 
 	after(() => {
+		this.proxy.httpServer.close();
 		this.proxy.server.close();
+	});
+
+	it('should handle request', ()  =>{
+		const requestStub = stub(http, 'request');
+		this.proxy.requestHandler(this.request, this.response);
+		expect(requestStub.calledOnce).to.be.equal(true);
 	});
 
 	it('should set connection id', () => {
