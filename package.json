@@ -7,6 +7,8 @@
 		"start": "NODE_ENV=dev node cluster.js | ./node_modules/.bin/rotate-logs",
 		"test": "NODE_ENV=test ./node_modules/.bin/nyc ./node_modules/.bin/mocha 'test/**/*.js'",
 		"format": "./node_modules/.bin/prettier --write .",
+		"eslint": "./node_modules/.bin/eslint *.js",
+		"eslint:test": "./node_modules/.bin/eslint test/*.js",
 		"eslint:fix": "./node_modules/.bin/eslint *.js --fix",
 		"test:eslint:fix": "./node_modules/.bin/eslint test/*.js --fix"
 	},
