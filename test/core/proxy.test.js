@@ -36,7 +36,7 @@ describe('Proxy', () => {
 		this.proxy.server.close();
 	});
 
-	it('should handle request', ()  =>{
+	it('should handle request', () => {
 		const requestStub = stub(http, 'request');
 		this.proxy.requestHandler(this.request, this.response);
 		expect(requestStub.calledOnce).to.be.equal(true);

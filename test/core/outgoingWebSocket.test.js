@@ -182,14 +182,14 @@ describe('OutgoingWebSocket', () => {
 			expect(emitSpy.callCount).to.equal(0);
 		});
 
-		it('should emit kUpstreamClosed if shouldRetry false and msg !== SERVICE_RESTART', () => {
+		it('should emit kUpstreamClosed if shouldRetry false and msg is not SERVICE_RESTART', () => {
 			outgoingWs.shouldRetry = false;
 			outgoingWs.closeHandler(1001, 'not SERVICE_RESTART');
 			assert(emitSpy.calledOnce);
 			assert(emitSpy.calledWith(kUpstreamClosed, 1001, 'not SERVICE_RESTART'));
 		});
 
-		it('should not update shouldRetry if shouldRetry false and msg !== SERVICE_RESTART', () => {
+		it('should not update shouldRetry if shouldRetry false and msg is not SERVICE_RESTART', () => {
 			outgoingWs.shouldRetry = false;
 			outgoingWs.closeHandler(1001, 'not SERVICE_RESTART');
 			expect(outgoingWs.shouldRetry).to.equal(false);

@@ -11,6 +11,7 @@ const {
 	kClientClosed,
 	kDrainMessage,
 	kDrainCompleted,
+	kQueueMessage,
 } = require('../../lib/config/constants');
 
 describe('IncomingWebSocket', () => {
@@ -168,6 +169,14 @@ describe('IncomingWebSocket', () => {
 			incomingWs.messageHandler('new mesg');
 			assert(emitSpy.calledOnce);
 			assert(emitSpy.calledWith(kMessageReceived, 'new mesg'));
+		});
+
+		it('should emit kQueueMessage', () => {
+			const emitSpy = spy();
+			incomingWs.emit = emitSpy;
+			incomingWs.messageHandler('PROXY_RESTART');
+			assert(emitSpy.calledOnce);
+			assert(emitSpy.calledWith(kQueueMessage));
 		});
 	});
 

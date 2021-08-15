@@ -10,23 +10,23 @@ const ProcessHandler = require('./lib/util/ProcessHandler.js');
 const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
 
-function forceKill(worker) {
+const forceKill = (worker) => {
 	if (!worker.isDead()) {
 		logger.info(`Worker ${worker.process.pid} is ${worker.state}, Killing it`);
 		worker.kill('SIGUSR2');
 	}
-}
+};
 
-function disconnectOldWorkers() {
+const disconnectOldWorkers = () => {
 	const len = activeWorkers.length;
 	for (let i = 0; i < len; i++) {
 		const oldWorker = activeWorkers.shift();
 		oldWorker.disconnect();
 		setTimeout(() => forceKill(oldWorker), config.workerKillTimer);
 	}
-}
+};
 
-function spawnNewWorkers() {
+const spawnNewWorkers = () => {
 	if (cluster.isMaster) {
 		for (let i = 0; i < WORKER_CNT; ++i) {
 			const worker = cluster.fork();
@@ -37,7 +37,7 @@ function spawnNewWorkers() {
 			activeWorkers.push(worker);
 		}
 	}
-}
+};
 
 if (cluster.isMaster) {
 	cluster.on('online', function (worker) {

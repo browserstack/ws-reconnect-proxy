@@ -67,7 +67,7 @@ describe('Context', () => {
 		});
 	});
 
-	describe('incomingSocket', () => {
+	describe('incomingWebSocket', () => {
 		it('should emit connection opened', () => {
 			this.incomingSocket.on(kConnectionOpened, () => {
 				this.outgoingSocket.on(kDequeueMessage, () => {
@@ -236,7 +236,6 @@ describe('Context', () => {
 				});
 			});
 			this.outgoingSocket.emit(kDrainMessage, 'DRAIN MESSAGE');
-
 			done();
 		});
 
