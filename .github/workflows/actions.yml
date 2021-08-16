@@ -18,6 +18,9 @@ jobs:
       name: Setup Node.js
       with:
         node-version: '16.6.0'
+    - run: |
+        cp lib/config/config.json.sample lib/config/config.json
+      name: Setting up configuration
     - run: | 
         npm ci
       name: Installing Dependencies

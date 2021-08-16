@@ -51,9 +51,9 @@ npm run format
 
 ### 🚀 Run proxy
 
-🔧 Before, executing proxy create the `config.json`, run the following command: 
+🔧 Before, executing proxy create the `config.json` by running the following command: 
 ```bash
-cp config.json config.json.sample 
+cp lib/config/config.json.sample lib/config/config.json
 ```
 
 Additionally, you can configuration your proxy based on your needs. Refer here - [config.json.sample](lib/config/config.json.sample)
