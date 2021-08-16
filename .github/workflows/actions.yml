@@ -25,7 +25,7 @@ jobs:
       name: Running ESLint checks on source
     - run: |
         npm run eslint:test
-    name: Running ESLint checks on tests  
+      name: Running ESLint checks on tests  
     - run: |
         npm run test
-    name: Running tests
+      name: Running tests
