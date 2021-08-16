@@ -18,6 +18,8 @@ const {
   kClientClosed,
   kAddNewContext,
   kConnectionOpened,
+  kEnableIncomingQueue,
+  kEnableOutgoingQueue,
 } = require('../../lib/config/constants');
 
 describe('Context', () => {
@@ -84,6 +86,52 @@ describe('Context', () => {
         expect(this.incomingSocket.queue).to.not.be.empty;
       });
       this.incomingSocket.emit(kMessageReceived);
+      done();
+    });
+
+    it('should send message', (done) => {
+      context.outgoingSocket = new EventEmitter();
+      context.incomingLock = false;
+      this.incomingSocket.on(kMessageReceived, (msg) => {
+        assert(context.incomingLock === false);
+        assert(msg === 'message');
+        this.outgoingSocket.on(kSendMessage, (msg) => {
+          const sendSpy = spy();
+          context.incomingSocket.send = sendSpy;
+          assert(sendSpy.calledOnce);
+          assert(msg === 'message');
+        });
+      });
+      this.incomingSocket.emit(kMessageReceived, 'message');
+      done();
+    });
+
+    it('should drain message', (done) => {
+      context.outgoingSocket = new EventEmitter();
+      this.incomingSocket.on(kDrainMessage, (msg) => {
+        assert(msg === 'message');
+        this.outgoingSocket.on(kSendMessage, (msg) => {
+          const sendSpy = spy();
+          context.outgoingSocket.send = sendSpy;
+          assert(sendSpy.calledOnce);
+          assert(msg === 'message');
+        });
+      });
+      this.incomingSocket.emit(kDrainMessage, 'message');
+      done();
+    });
+
+    it('should set incoming lock and send message proxy locked', (done) => {
+      this.incomingSocket.on(kEnableOutgoingQueue, () => {
+        assert(context.outgoingLock);
+        this.incomingSocket.on(kSendMessage, (msg) => {
+          const sendSpy = spy();
+          context.incomingSocket.send = sendSpy;
+          assert(sendSpy.calledOnce);
+          assert(msg === 'PROXY_LOCKED');
+        });
+      });
+      this.incomingSocket.emit(kEnableOutgoingQueue);
       done();
     });
 
@@ -190,6 +238,21 @@ describe('Context', () => {
         assert(context.outgoingLock);
       });
       this.outgoingSocket.emit(kQueueMessage);
+      done();
+    });
+
+    it('should set incoming lock and send message proxy locked', (done) => {
+      context.outgoingSocket = new EventEmitter();
+      this.outgoingSocket.on(kEnableIncomingQueue, () => {
+        assert(context.incomingLock);
+        this.outgoingSocket.on(kSendMessage, (msg) => {
+          const sendSpy = spy();
+          context.outgoingSocket.send = sendSpy;
+          assert(sendSpy.calledOnce);
+          assert(msg === 'PROXY_LOCKED');
+        });
+      });
+      this.outgoingSocket.emit(kEnableIncomingQueue);
       done();
     });
 

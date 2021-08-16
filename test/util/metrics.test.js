@@ -57,7 +57,7 @@ describe('#incrErrorConnectionCount', () => {
 describe('#decrActiveConnectionCount', () => {
   it('should decrement active connection count', () => {
     decrActiveConnectionCount();
-    expect(getMetrics().activeConnectionCount).to.be.greaterThanOrEqual(1);
+    expect(getMetrics().activeConnectionCount).to.be.greaterThanOrEqual(0);
   });
 });
 
