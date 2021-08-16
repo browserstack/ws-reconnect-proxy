@@ -10,15 +10,15 @@ Read more about [📝 design](docs/design.md)
 - [Development Internals](#development-internals)
 
 ### ✨ How to contribute
+
 We are very happy to receive and merge your contributions into this repository!
 
 To contribute via pull request, follow these steps:
 
 1. Create an issue describing the feature you want to work on (or
    have a look at the [issues](https://github.com/browserstack/ws-reconnect-proxy/issues))
-2. Write your code, tests and format them with ``npm run format``
+2. Write your code, tests and format them with `npm run format`
 3. Create a pull request describing your changes
-
 
 Your pull request will be reviewed by a maintainer, who will get
 back to you about any necessary changes or questions.
@@ -51,7 +51,8 @@ npm run format
 
 ### 🚀 Run proxy
 
-🔧 Before, executing proxy create the `config.json` by running the following command: 
+🔧 Before, executing proxy create the `config.json` by running the following command:
+
 ```bash
 cp lib/config/config.json.sample lib/config/config.json
 ```
@@ -64,7 +65,8 @@ Then execute proxy by running the following command:
 npm run start
 ```
 
-*NOTE: By default it runs in `dev` environment you can configure your env by the following command:*
+_NOTE: By default it runs in `dev` environment you can configure your env by the following command:_
+
 ```bash
 NODE_ENV=<env> node cluster.js
-``` 
+```
