@@ -15,10 +15,9 @@ const {
   kDrainCompleted,
   SERVICE_RESTART,
   RECONNECT,
-	kEnableIncomingQueue,
+  kEnableIncomingQueue,
 } = require('../../lib/config/constants');
 const utilFn = require('../../lib/util/util');
-const { EventEmitter } = require('../../lib/core/OutgoingWebSocket');
 
 describe('OutgoingWebSocket', () => {
   let outgoingWs, upstreamUrl, headers;
@@ -168,7 +167,7 @@ describe('OutgoingWebSocket', () => {
       expect(msgSpy.calledWith(kMessageReceived)).to.equal(false);
     });
 
-		it('should emit kEnableIncomingQueue', () => {
+    it('should emit kEnableIncomingQueue', () => {
       const emitSpy = spy();
       outgoingWs.emit = emitSpy;
       outgoingWs.messageHandler('PROXY_RESTART');
