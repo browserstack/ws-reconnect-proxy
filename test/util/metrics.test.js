@@ -56,7 +56,7 @@ describe('#decrActiveConnectionCount', () => {
 describe('#setMetric', () => {
   it('should set metric', () => {
     setMetrics();
-    expect(getMetrics().messagesCount).to.be.equal(0);
+    expect(getMetrics().newConnectionsCount).to.be.equal(0);
   });
 });
 
