@@ -2,7 +2,6 @@ const {
   incrReconnectionCount,
   incrActiveConnectionCount,
   incrNewConnect,
-  incrMessagesCount,
   incrClosedConnectionCount,
   incrErrorConnectionCount,
   decrActiveConnectionCount,
@@ -30,13 +29,6 @@ describe('#incrNewConnect', () => {
   it('should increment new connection count', () => {
     incrNewConnect();
     expect(getMetrics().newConnectionsCount).to.be.greaterThanOrEqual(1);
-  });
-});
-
-describe('#incrMessagesCount', () => {
-  it('should increment messages count', () => {
-    incrMessagesCount();
-    expect(getMetrics().messagesCount).to.be.greaterThanOrEqual(1);
   });
 });
 
