@@ -10,6 +10,10 @@ const ProcessHandler = require('./lib/util/ProcessHandler.js');
 const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
 
+const path = require('path');
+
+const RESTART_FILE = path.join(__dirname, 'tmp', 'restart.txt');
+
 const forceKill = (worker) => {
   if (!worker.isDead()) {
     logger.info(`Worker ${worker.process.pid} is ${worker.state}, Killing it`);
@@ -54,7 +58,7 @@ if (cluster.isMaster) {
   spawnNewWorkers();
 
   let currTime = Date.now();
-  watch('tmp/restart.txt', () => {
+  watch(RESTART_FILE, () => {
     if (Date.now() > currTime) {
       currTime = Date.now();
       disconnectOldWorkers();
