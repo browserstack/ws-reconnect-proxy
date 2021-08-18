@@ -48,7 +48,7 @@ Lets consider if server disconnects due to abrupt close / deploys on server. Pro
 |------------|     |-----------|     |-----------|
 ```
 
-Now, as the server is in disconnected state & if client sends the message Proxy jobs is to queue the client messages aka `IncomingQueue`.
+Now, as the server is in a disconnected state & if the client sends any messages, the Proxy's job is to queue the client messages aka `IncomingQueue`.
 
 ```
 |------------|     |-----------|     |-----------|
@@ -68,7 +68,7 @@ Once, the server is connected all the messages from `IncomingQueue` is drained b
 
 ### 3. Client Disconnect
 
-Now, as the client is connected for some reason client disconnects. Proxy also breaks the connection between server after `t` interval.
+If for some reason the client disconnects, Proxy also breaks the connection between server after `t` interval.
 
 ```
 |------------|     |-----------|     |----------|
@@ -126,7 +126,7 @@ class OutgoingWebSocket:
 
 - `Proxy` holds the map of contexts for which connection is established.
 - `Context` should hold the `IncomingSocket` & `OutgoingSocket` data.
-- If the server is disconnected `incomingLock` is set to `true` & therefore messages coming from client is queued. Additionally, if `OutgoingSocket` is closed retry `n` times, post retries done then terminate the `IncomingSocket`.
+- If the server is disconnected `incomingLock` is set to `true` & therefore messages coming from client is queued. Additionally, if `OutgoingSocket` is closed, then retry `n` times. Post all the retries, terminate the `IncomingSocket`.
 - If the client is disconnected `outgoingLock` is set to `true` & therefore messages coming from upstream is queued. Additionally, if `IncomingSocket` is closed then `OutgoingSocket` not be closed immediately and wait for `t` interval before closing the `OutgoingSocket`.
 
 - If the server is reconnected then drain the messages from `IncomingQueue` & send those messages to `OutgoingSocket`.
