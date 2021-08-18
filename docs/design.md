@@ -48,7 +48,7 @@ Lets consider if server disconnects due to abrupt close / deploys on server. Pro
 |------------|     |-----------|     |-----------|
 ```
 
-Now, as the server is in disconnected state & if client sends the message Proxy jobs is to queue the client messages aka `IncomingQueue`.
+Now, as the server is in a disconnected state & if the client sends any messages, the Proxy's job is to queue the client messages aka `IncomingQueue`.
 
 ```
 |------------|     |-----------|     |-----------|
