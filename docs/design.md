@@ -68,7 +68,7 @@ Once, the server is connected all the messages from `IncomingQueue` is drained b
 
 ### 3. Client Disconnect
 
-Now, as the client is connected for some reason client disconnects. Proxy also breaks the connection between server after `t` interval.
+If for some reason the client disconnects, Proxy also breaks the connection between server after `t` interval.
 
 ```
 |------------|     |-----------|     |----------|
