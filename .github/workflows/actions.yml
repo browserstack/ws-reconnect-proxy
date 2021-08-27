@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Lint and Test
+    steps:
+    - uses: actions/checkout@v2
+      name: Check out repository
+    - uses: actions/setup-node@v2
+      name: Setup Node.js
+      with:
+        node-version: '14.17.5'
+    - run: |
+        cp lib/config/config.json.sample lib/config/config.json
+      name: Setting up configuration
+    - run: | 
+        npm ci
+      name: Installing Dependencies
+    - run: |
+        npm run eslint
+      name: Running ESLint checks on source
+    - run: |
+        npm run eslint:test
+      name: Running ESLint checks on tests  
+    - run: |
+        npm run test
+      name: Running tests

@@ -1,0 +1,4 @@
+logs/
+.github/
+.nyc_output/
+.vscode/
