@@ -1,0 +1,17 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "pwa-node",
+			"request": "launch",
+			"name": "ws-reconnect-proxy",
+			"skipFiles": ["<node_internals>/**"],
+			"program": "${workspaceFolder}/cluster.js",
+			"outputCapture": "std",
+			"console": "internalConsole",
+			"env": {
+				"NODE_ENV": "dev"
+			}
+		}
+	]
+}
