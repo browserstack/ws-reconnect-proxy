@@ -26,7 +26,6 @@
     "upstream": "ws://localhost:9125",
     "retryDelay": 10000,
     "closeTimer": 15000,
-    "workerKillTimer": 10000,
     "enableInstrumentation": true,
     "instrumentationTimer": 60000
   }
