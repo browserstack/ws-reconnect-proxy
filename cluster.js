@@ -1,17 +1,18 @@
 'use strict';
 
 const cluster = require('cluster');
-const { config } = require('./lib/config/constants.js');
 const { watch } = require('fs');
-const logger = require('./lib/util/loggerFactory.js');
-const Proxy = require('./lib/core/Proxy.js');
+const path = require('path');
+
+const codeDir = process.env.CODE_DIR || path.join(__dirname, '/');
+const { config } = require(path.join(codeDir, 'lib/config/constants.js'));
+const logger = require(path.join(codeDir, 'lib/util/loggerFactory.js'));
+const Proxy = require(path.join(codeDir, 'lib/core/Proxy.js'));
 
 const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
 
-const path = require('path');
-
-const RESTART_FILE = path.join(__dirname, 'tmp', 'restart.txt');
+const RESTART_FILE = path.join(codeDir, 'tmp/restart.txt');
 
 const forceKill = (worker) => {
   if (!worker.isDead()) {
