@@ -156,7 +156,7 @@ describe('IncomingWebSocket', () => {
     it('should emit kError once', () => {
       const emitSpy = spy();
       incomingWs.emit = emitSpy;
-      incomingWs.errorHandler();
+      incomingWs.errorHandler('SOME ERROR');
       assert(emitSpy.calledOnce);
       assert(emitSpy.calledWith(kError));
     });
