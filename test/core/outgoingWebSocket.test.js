@@ -224,7 +224,7 @@ describe('OutgoingWebSocket', () => {
     it('should emit kError', () => {
       const errSpy = spy();
       outgoingWs.emit = errSpy;
-      outgoingWs.errorHandler();
+      outgoingWs.errorHandler('SOME ERROR');
       assert(errSpy.calledOnce);
     });
   });
