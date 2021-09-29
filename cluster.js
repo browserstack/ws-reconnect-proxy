@@ -66,5 +66,11 @@ if (cluster.isMaster) {
     }
   });
 } else {
-  new Proxy();
+  const proxy = new Proxy();
+  cluster.worker.on('disconnect', () => {
+    proxy.httpServer.close(() => {
+      logger.info(`Worker stopping ${process.pid}`);
+      process.exit(0);
+    });
+  });
 }
