@@ -1,19 +1,19 @@
-const Instrumentation = require('../../lib/util/Instrumentation');
 const { describe, it, beforeEach } = require('mocha');
 const sinon = require('sinon');
 const { expect } = require('chai');
 const logger = require('../../lib/util/loggerFactory');
+const AlertManager = require('../../lib/util/AlertManager');
 
-describe('#Instrumentation', () => {
-  let instrumentation;
+describe('#AlertManager', () => {
+  let alertManager;
   beforeEach(() => {
-    instrumentation = new Instrumentation();
+    alertManager = new AlertManager();
   });
 
-  describe('#pushMetrics', () => {
-    it('should log metrics', () => {
+  describe('#sendAlert', () => {
+    it('should log & send alert', () => {
       const loggerStub = sinon.stub(logger, 'info');
-      instrumentation.pushMetrics();
+      alertManager.sendAlert('SUBJECT', 'MESSAGE');
       expect(loggerStub.calledOnce).to.be.equal(true);
       loggerStub.restore();
     });
