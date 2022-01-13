@@ -137,10 +137,17 @@ describe('IncomingWebSocket', () => {
 
   describe('#close', () => {
     let terminateSpy;
+    let closeSpy;
     before(() => {
       terminateSpy = spy();
+      closeSpy = spy();
       incomingWs.socket.terminate = terminateSpy;
-      incomingWs.close();
+      incomingWs.socket.close = closeSpy;
+      incomingWs.close(1001, 'msg');
+    });
+
+    it('should close the websocket', () => {
+      assert(closeSpy.calledWith(1001, 'msg'));
     });
 
     it('should terminate the websocket', () => {
