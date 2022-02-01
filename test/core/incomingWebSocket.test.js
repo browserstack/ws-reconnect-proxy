@@ -138,23 +138,38 @@ describe('IncomingWebSocket', () => {
   describe('#close', () => {
     let terminateSpy;
     let closeSpy;
-    before(() => {
+    beforeEach(() => {
       terminateSpy = spy();
       closeSpy = spy();
       incomingWs.socket.terminate = terminateSpy;
       incomingWs.socket.close = closeSpy;
-      incomingWs.close(1001, 'msg');
     });
 
-    it('should close the websocket', () => {
+    it('should close and terminate the websocket when code is >= 1000 and < 1004', () => {
+      incomingWs.close(1001, 'msg');
       assert(closeSpy.calledWith(1001, 'msg'));
+      assert(terminateSpy.calledOnce);
+    });
+
+    it('should not call close, only terminate the websocket when code is 1005', () => {
+      incomingWs.close(1005, 'msg');
+      assert.isFalse(closeSpy.called);
+      assert(terminateSpy.calledOnce);
+    });
+
+    it('should not call close, only terminate the websocket when code is 1006', () => {
+      incomingWs.close(1006, 'msg');
+      assert.isFalse(closeSpy.called);
+      assert(terminateSpy.calledOnce);
     });
 
     it('should terminate the websocket', () => {
+      incomingWs.close(1001, 'msg');
       assert(terminateSpy.calledOnce);
     });
 
     it('should set teardown to true', () => {
+      incomingWs.close(1001, 'msg');
       expect(incomingWs.teardown).to.equal(true);
     });
   });
