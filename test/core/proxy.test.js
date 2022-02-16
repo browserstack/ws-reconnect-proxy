@@ -2,7 +2,7 @@ const Proxy = require('../../lib/core/Proxy');
 const Context = require('../../lib/core/Context');
 const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
-const { spy, stub } = require('sinon');
+const { spy } = require('sinon');
 const { kAddNewContext } = require('../../lib/config/constants');
 const http = require('http');
 
@@ -37,9 +37,10 @@ describe('Proxy', () => {
   });
 
   it('should handle request', () => {
-    const requestStub = stub(http, 'request');
+    const requestSpy = spy(http, 'request');
     this.proxy.requestHandler(this.request, this.response);
-    expect(requestStub.calledOnce).to.be.equal(true);
+    expect(requestSpy.calledOnce).to.be.equal(true);
+    requestSpy.restore();
   });
 
   it('should set connection id', () => {
