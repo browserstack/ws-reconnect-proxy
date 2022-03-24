@@ -13,6 +13,8 @@ const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
 
 const RESTART_FILE = path.join(codeDir, 'tmp/restart.txt');
+const STOP_FILE = path.join(codeDir, 'tmp/stop.txt');
+let stopCalled = false;
 
 const forceKill = (worker) => {
   if (!worker.isDead()) {
@@ -52,6 +54,14 @@ if (cluster.isMaster) {
     logger.info(
       `worker ${worker.process.pid} died with signal ${signal} code ${code}`
     );
+    if (stopCalled) {
+      if (activeWorkers.length == 0) {
+        logger.info(
+          `All workers stopped. Exiting master process ${process.pid}`
+        );
+        process.exit(0);
+      }
+    }
     if (activeWorkers.length == 0) spawnNewWorkers();
   });
 
@@ -63,6 +73,13 @@ if (cluster.isMaster) {
       currTime = Date.now();
       disconnectOldWorkers();
       spawnNewWorkers();
+    }
+  });
+  watch(STOP_FILE, () => {
+    stopCalled = true;
+    if (Date.now() > currTime) {
+      currTime = Date.now();
+      disconnectOldWorkers();
     }
   });
 } else {
