@@ -62,7 +62,7 @@ if (cluster.isMaster) {
         process.exit(0);
       }
     }
-    if (activeWorkers.length == 0) spawnNewWorkers();
+    if (activeWorkers.length == 0 && !stopCalled) spawnNewWorkers();
   });
 
   spawnNewWorkers();
@@ -76,6 +76,7 @@ if (cluster.isMaster) {
     }
   });
   watch(STOP_FILE, () => {
+    logger.info(`Stopping cluster gracefully`)
     stopCalled = true;
     if (Date.now() > currTime) {
       currTime = Date.now();
