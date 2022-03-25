@@ -1,7 +1,7 @@
 'use strict';
 
 const cluster = require('cluster');
-const { watch } = require('fs');
+const { watch, fstat, existsSync } = require('fs');
 const path = require('path');
 
 const codeDir = process.env.CODE_DIR || path.join(__dirname, '/');
@@ -75,14 +75,18 @@ if (cluster.isMaster) {
       spawnNewWorkers();
     }
   });
-  watch(STOP_FILE, () => {
-    logger.info(`Stopping cluster gracefully`)
-    stopCalled = true;
-    if (Date.now() > currTime) {
-      currTime = Date.now();
-      disconnectOldWorkers();
-    }
-  });
+  if (existsSync(STOP_FILE)) {
+    watch(STOP_FILE, () => {
+      logger.info(`Stopping cluster gracefully`)
+      stopCalled = true;
+      if (Date.now() > currTime) {
+        currTime = Date.now();
+        disconnectOldWorkers();
+      }
+    });
+  } else {
+    logger.info('Graceful stop is not enabled')
+  }
 } else {
   const proxy = new Proxy();
   cluster.worker.on('disconnect', () => {
