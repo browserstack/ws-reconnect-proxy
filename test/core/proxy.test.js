@@ -5,6 +5,7 @@ const { expect } = require('chai');
 const { spy } = require('sinon');
 const { kAddNewContext } = require('../../lib/config/constants');
 const http = require('http');
+const { assert } = require('console');
 
 describe('Proxy', () => {
   before(() => {
@@ -26,6 +27,7 @@ describe('Proxy', () => {
 
     this.response = {
       writeHead: spy(),
+      end: spy()
     };
 
     this.proxy = new Proxy();
@@ -41,6 +43,21 @@ describe('Proxy', () => {
     this.proxy.requestHandler(this.request, this.response);
     expect(requestSpy.calledOnce).to.be.equal(true);
     requestSpy.restore();
+  });
+
+  it('should handle request', () => {
+    const request = {
+      pipe: spy(),
+      url: this.upstreamUrl + 'status',
+      headers: {
+        'x-connection-id': 'CONNECTION_ID',
+      },
+    };
+    this.proxy.requestHandler(request, this.response);
+    expect(this.response.writeHead.calledOnce).to.be.equal(true);
+    assert(this.response.writeHead.calledWith(200, {'content-type': 'application/json; charset=utf-8', 'accept': 'application/json', 'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"'}));
+    expect(this.response.end.calledOnce).to.be.equal(true);
+    assert(this.response.writeHead.calledWith(JSON.stringify({"status" : "Running"})));
   });
 
   it('should set connection id', () => {
