@@ -1,7 +1,7 @@
 'use strict';
 
 const cluster = require('cluster');
-const { watch } = require('fs');
+const { watch, fstat, existsSync } = require('fs');
 const path = require('path');
 
 const codeDir = process.env.CODE_DIR || path.join(__dirname, '/');
@@ -13,6 +13,8 @@ const WORKER_CNT = config.workerVal;
 const activeWorkers = [];
 
 const RESTART_FILE = path.join(codeDir, 'tmp/restart.txt');
+const STOP_FILE = path.join(codeDir, 'tmp/stop.txt');
+let stopCalled = false;
 
 const forceKill = (worker) => {
   if (!worker.isDead()) {
@@ -52,7 +54,15 @@ if (cluster.isMaster) {
     logger.info(
       `worker ${worker.process.pid} died with signal ${signal} code ${code}`
     );
-    if (activeWorkers.length == 0) spawnNewWorkers();
+    if (stopCalled) {
+      if (activeWorkers.length == 0) {
+        logger.info(
+          `All workers stopped. Exiting master process ${process.pid}`
+        );
+        process.exit(0);
+      }
+    }
+    if (activeWorkers.length == 0 && !stopCalled) spawnNewWorkers();
   });
 
   spawnNewWorkers();
@@ -65,6 +75,18 @@ if (cluster.isMaster) {
       spawnNewWorkers();
     }
   });
+  if (existsSync(STOP_FILE)) {
+    watch(STOP_FILE, () => {
+      logger.info(`Stopping cluster gracefully`)
+      stopCalled = true;
+      if (Date.now() > currTime) {
+        currTime = Date.now();
+        disconnectOldWorkers();
+      }
+    });
+  } else {
+    logger.info('Graceful stop is not enabled')
+  }
 } else {
   const proxy = new Proxy();
   cluster.worker.on('disconnect', () => {
