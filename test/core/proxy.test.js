@@ -57,7 +57,7 @@ describe('Proxy', () => {
     expect(this.response.writeHead.calledOnce).to.be.equal(true);
     assert(this.response.writeHead.calledWith(200, {'content-type': 'application/json; charset=utf-8', 'accept': 'application/json', 'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"'}));
     expect(this.response.end.calledOnce).to.be.equal(true);
-    assert(this.response.writeHead.calledWith(JSON.stringify({"status" : "Running"})));
+    assert(this.response.writeHead.calledWith(JSON.stringify({'status' : 'Running'})));
   });
 
   it('should set connection id', () => {
