@@ -1,7 +1,7 @@
 {
   "prod": {
     "workers": 1,
-    "port": 9124,
+    "port": 9222,
     "hostname": "127.0.0.1",
     "upstream": "ws://localhost:9125",
     "retryDelay": 10000,
