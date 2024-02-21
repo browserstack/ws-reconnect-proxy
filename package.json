@@ -28,6 +28,7 @@
     "pino": "^6.11.3",
     "pino-pretty": "^5.1.2",
     "uuid": "^8.3.2",
+    "browserstack-dwh": "git+ssh://git@github.com/browserstack/dwh_node.git#51d116bc7049fa691d30dc69b16cfc5a47e77a79",
     "ws": "^7.5.0"
   },
   "devDependencies": {
