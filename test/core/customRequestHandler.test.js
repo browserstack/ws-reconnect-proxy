@@ -55,10 +55,46 @@ describe('CustomRequestHandler', () => {
 
   describe('getList method', () => {
     it('should return the customRequestList', () => {
+      CustomRequestHandler.resetInstance();
       const customRequestHandler = new CustomRequestHandler();
       const list = customRequestHandler.getList();
       assert.isObject(list);
       assert.isEmpty(list);
+    });
+  });
+
+  describe('#isCustomRequestListEmpty', () => {
+    beforeEach(() => {
+      CustomRequestHandler.resetInstance();
+    });
+    it('should return true if the custom request list is empty', () => {
+      const customRequestHandler = new CustomRequestHandler();
+      const result = customRequestHandler.isCustomRequestListEmpty();
+      assert.isTrue(result);
+    });
+
+    it('should return false if the custom request list is not empty', () => {
+      const customRequestHandler = new CustomRequestHandler();
+      customRequestHandler.addCustomRequest('request_1');
+      const result = customRequestHandler.isCustomRequestListEmpty();
+      assert.isFalse(result);
+    });
+
+    it('should handle multiple items in the custom request list', () => {
+      const customRequestHandler = new CustomRequestHandler();
+      customRequestHandler.addCustomRequest('request_1');
+      customRequestHandler.addCustomRequest('request_2');
+      const result = customRequestHandler.isCustomRequestListEmpty();
+      assert.isFalse(result);
+    });
+
+    it('should return true if some properties are directly defined on the object', () => {
+      const customRequestHandler = new CustomRequestHandler();
+      customRequestHandler.customRequestList = Object.create({
+        name: 'inherited',
+      });
+      const result = customRequestHandler.isCustomRequestListEmpty();
+      assert.isTrue(result);
     });
   });
 });

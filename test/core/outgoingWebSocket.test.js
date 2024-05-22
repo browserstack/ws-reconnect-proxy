@@ -211,6 +211,7 @@ describe('OutgoingWebSocket', () => {
         const mockCustomRequestHandler = {
           getList: stub().returns({ customRequestId: {} }),
           customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
         };
         customRequestHandler = stub(
           CustomRequestHandler,
@@ -233,6 +234,7 @@ describe('OutgoingWebSocket', () => {
         const mockCustomRequestHandler = {
           getList: stub().returns({ customRequestId: {} }),
           customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
         };
         customRequestHandler = stub(
           CustomRequestHandler,
@@ -256,6 +258,7 @@ describe('OutgoingWebSocket', () => {
         const mockCustomRequestHandler = {
           getList: stub().returns({ customRequestId: {} }),
           customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
         };
         customRequestHandler = stub(
           CustomRequestHandler,
@@ -289,6 +292,25 @@ describe('OutgoingWebSocket', () => {
           }
         );
 
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.messageHandler(msg);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kMessageReceived, msg));
+      });
+
+      it('should not handle custom requests when no custom requests are pending', () => {
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(true),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
         outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
         msgSpy = spy();
         outgoingWsCustom.emit = msgSpy;
@@ -385,6 +407,7 @@ describe('OutgoingWebSocket', () => {
         const mockCustomRequestHandler = {
           getList: stub().returns({ customRequestId: {} }),
           customRequestList: { customRequestId: { reject: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
         };
         customRequestHandler = stub(
           CustomRequestHandler,
@@ -407,6 +430,7 @@ describe('OutgoingWebSocket', () => {
         const mockCustomRequestHandler = {
           getList: stub().returns({ customRequestId: {} }),
           customRequestList: { customRequestId: { reject: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
         };
         customRequestHandler = stub(
           CustomRequestHandler,
@@ -430,6 +454,7 @@ describe('OutgoingWebSocket', () => {
         const mockCustomRequestHandler = {
           getList: stub().returns({ customRequestId: {} }),
           customRequestList: { customRequestId: { reject: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
         };
         customRequestHandler = stub(
           CustomRequestHandler,
@@ -463,6 +488,26 @@ describe('OutgoingWebSocket', () => {
           }
         );
 
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.errorHandler(msg);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kError, msg));
+      });
+
+      it('should not handle custom requests when no custom requests are pending', () => {
+        // Mock CustomRequestHandler
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(true),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
         outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
         msgSpy = spy();
         outgoingWsCustom.emit = msgSpy;
