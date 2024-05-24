@@ -8,6 +8,11 @@ const http = require('http');
 const { assert } = require('console');
 const proxyquire = require('proxyquire');
 const CustomRequestHandler = require('../../lib/core/CustomRequestHandler');
+const responseHeaders = {
+  'content-type': 'application/json; charset=utf-8',
+  accept: 'application/json',
+  'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"',
+};
 
 describe('Proxy', () => {
   before(() => {
@@ -146,11 +151,7 @@ describe('Proxy', () => {
       );
       setTimeout(() => {
         assertChai.isTrue(
-          responseMock.writeHead.calledOnceWith(200, {
-            'content-type': 'application/json; charset=utf-8',
-            accept: 'application/json',
-            'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"',
-          })
+          responseMock.writeHead.calledOnceWith(200, responseHeaders)
         );
         assertChai.isTrue(
           responseMock.end.calledOnceWith(
@@ -218,11 +219,7 @@ describe('Proxy', () => {
       );
       setTimeout(() => {
         assertChai.isTrue(
-          responseMock.writeHead.calledOnceWith(500, {
-            'content-type': 'application/json; charset=utf-8',
-            accept: 'application/json',
-            'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"',
-          })
+          responseMock.writeHead.calledOnceWith(500, responseHeaders)
         );
         assertChai.isTrue(
           responseMock.end.calledOnceWith(
@@ -248,11 +245,7 @@ describe('Proxy', () => {
 
       // Assertions for the outer catch block
       assertChai.isTrue(
-        responseMock.writeHead.calledOnceWith(500, {
-          'content-type': 'application/json; charset=utf-8',
-          accept: 'application/json',
-          'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"',
-        })
+        responseMock.writeHead.calledOnceWith(500, responseHeaders)
       );
       assertChai.isTrue(
         responseMock.end.calledOnceWith(
@@ -273,11 +266,7 @@ describe('Proxy', () => {
     this.proxy.requestHandler(request, this.response);
     expect(this.response.writeHead.calledOnce).to.be.equal(true);
     assert(
-      this.response.writeHead.calledWith(200, {
-        'content-type': 'application/json; charset=utf-8',
-        accept: 'application/json',
-        'WWW-Authenticate': 'Basic realm="WS Reconnect Proxy"',
-      })
+      this.response.writeHead.calledWith(200, responseHeaders)
     );
     expect(this.response.end.calledOnce).to.be.equal(true);
     assert(
