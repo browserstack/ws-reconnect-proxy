@@ -1,6 +1,7 @@
-const { describe, beforeEach, before, it } = require('mocha');
+const { describe, beforeEach, afterEach, before, it } = require('mocha');
 const { expect, assert } = require('chai');
-const { spy } = require('sinon');
+const { spy, stub } = require('sinon');
+const proxyquire = require('proxyquire');
 const Queue = require('../../lib/core/Queue');
 const OutgoingWebSocket = require('../../lib/core/OutgoingWebSocket');
 const {
@@ -16,8 +17,10 @@ const {
   SERVICE_RESTART,
   RECONNECT,
   kEnableIncomingQueue,
+  kError,
 } = require('../../lib/config/constants');
 const utilFn = require('../../lib/util/util');
+const CustomRequestHandler = require('../../lib/core/CustomRequestHandler');
 
 describe('OutgoingWebSocket', () => {
   let outgoingWs, upstreamUrl, headers;
@@ -174,6 +177,149 @@ describe('OutgoingWebSocket', () => {
       assert(emitSpy.calledOnce);
       assert(emitSpy.calledWith(kEnableIncomingQueue));
     });
+
+    describe('customRequest', () => {
+      let customRequestEnabled;
+      let OutgoingWebSocketWithMock;
+      let outgoingWsCustom;
+      let msgSpy;
+      let customRequestHandler;
+
+      beforeEach(() => {
+        // Stub the environment variable to return 'true'
+        customRequestEnabled = true;
+        // Stub the module with the custom environment variable value
+        OutgoingWebSocketWithMock = proxyquire(
+          '../../lib/core/OutgoingWebSocket',
+          {
+            '../../lib/config/constants': { customRequestEnabled },
+          }
+        );
+
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+      });
+
+      afterEach(() => {
+        OutgoingWebSocketWithMock = require('../../lib/core/OutgoingWebSocket');
+        customRequestHandler.restore();
+      });
+
+      it('should handle custom requests when enabled and id exists in map', () => {
+        // Mock CustomRequestHandler
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.messageHandler(msg);
+
+        expect(mockCustomRequestHandler.getList.calledOnce).to.be.true;
+        expect(
+          mockCustomRequestHandler.customRequestList[
+            'customRequestId'
+          ].resolve.calledOnceWith(msg)
+        ).to.be.true;
+        assert.isFalse(msgSpy.called);
+      });
+
+      it('should handle custom requests when enabled and id don"t exists in map', () => {
+        // Mock CustomRequestHandler
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        const msg = '{"id": "nonExistingId"}';
+        outgoingWsCustom.messageHandler(msg);
+
+        expect(mockCustomRequestHandler.getList.calledOnce).to.be.true;
+        expect(mockCustomRequestHandler.customRequestList['nonExistingId']).to
+          .be.undefined;
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kMessageReceived, msg));
+      });
+
+      it('catches error when JSON parsing fails and emits the message', () => {
+        // Mock CustomRequestHandler
+        const loggerStub = {
+          error: stub(),
+        };
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        OutgoingWebSocketWithMock = proxyquire(
+          '../../lib/core/OutgoingWebSocket',
+          {
+            '../../lib/config/constants': { customRequestEnabled },
+            '../../lib/util/loggerFactory': loggerStub,
+          }
+        );
+
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = 'invalid_json';
+        outgoingWsCustom.messageHandler(msg);
+        assert.isTrue(loggerStub.error.calledOnce);
+        assert.match(loggerStub.error.args[0][0], /Error parsing JSON/);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kMessageReceived, msg));
+      });
+
+      it('should not handle custom requests when disabled', () => {
+        customRequestEnabled = false;
+        OutgoingWebSocketWithMock = proxyquire(
+          '../../lib/core/OutgoingWebSocket',
+          {
+            '../../lib/config/constants': { customRequestEnabled },
+          }
+        );
+
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.messageHandler(msg);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kMessageReceived, msg));
+      });
+
+      it('should not handle custom requests when no custom requests are pending', () => {
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(true),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.messageHandler(msg);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kMessageReceived, msg));
+      });
+    });
   });
 
   describe('#closeHandler', () => {
@@ -226,6 +372,150 @@ describe('OutgoingWebSocket', () => {
       outgoingWs.emit = errSpy;
       outgoingWs.errorHandler('SOME ERROR');
       assert(errSpy.calledOnce);
+    });
+
+    describe('customRequest', () => {
+      let customRequestEnabled;
+      let OutgoingWebSocketWithMock;
+      let outgoingWsCustom;
+      let msgSpy;
+      let customRequestHandler;
+
+      beforeEach(() => {
+        // Stub the environment variable to return 'true'
+        customRequestEnabled = true;
+        // Stub the module with the custom environment variable value
+        OutgoingWebSocketWithMock = proxyquire(
+          '../../lib/core/OutgoingWebSocket',
+          {
+            '../../lib/config/constants': { customRequestEnabled },
+          }
+        );
+
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+      });
+
+      afterEach(() => {
+        OutgoingWebSocketWithMock = require('../../lib/core/OutgoingWebSocket');
+        customRequestHandler.restore();
+      });
+
+      it('should reject custom requests when enabled and id exists in map', () => {
+        // Mock CustomRequestHandler
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { reject: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.errorHandler(msg);
+
+        expect(mockCustomRequestHandler.getList.calledOnce).to.be.true;
+        expect(
+          mockCustomRequestHandler.customRequestList[
+            'customRequestId'
+          ].reject.calledOnceWith(msg)
+        ).to.be.true;
+        assert.isFalse(msgSpy.called);
+      });
+
+      it('should not reject custom requests when enabled and id don"t exists in map', () => {
+        // Mock CustomRequestHandler
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { reject: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        const msg = '{"id": "nonExistingId"}';
+        outgoingWsCustom.errorHandler(msg);
+
+        expect(mockCustomRequestHandler.getList.calledOnce).to.be.true;
+        expect(mockCustomRequestHandler.customRequestList['nonExistingId']).to
+          .be.undefined;
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kError, msg));
+      });
+
+      it('catches error when JSON parsing fails and emits the error', () => {
+        // Mock CustomRequestHandler
+        const loggerStub = {
+          error: stub(),
+        };
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { reject: spy() } },
+          isCustomRequestListEmpty: stub().returns(false),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        OutgoingWebSocketWithMock = proxyquire(
+          '../../lib/core/OutgoingWebSocket',
+          {
+            '../../lib/config/constants': { customRequestEnabled },
+            '../../lib/util/loggerFactory': loggerStub,
+          }
+        );
+
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = 'invalid_json';
+        outgoingWsCustom.errorHandler(msg);
+        assert.isTrue(loggerStub.error.calledOnce);
+        assert.match(loggerStub.error.args[0][0], /Error parsing JSON/);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kError, msg));
+      });
+
+      it('should not handle custom requests when disabled', () => {
+        customRequestEnabled = false;
+        OutgoingWebSocketWithMock = proxyquire(
+          '../../lib/core/OutgoingWebSocket',
+          {
+            '../../lib/config/constants': { customRequestEnabled },
+          }
+        );
+
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.errorHandler(msg);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kError, msg));
+      });
+
+      it('should not handle custom requests when no custom requests are pending', () => {
+        // Mock CustomRequestHandler
+        const mockCustomRequestHandler = {
+          getList: stub().returns({ customRequestId: {} }),
+          customRequestList: { customRequestId: { resolve: spy() } },
+          isCustomRequestListEmpty: stub().returns(true),
+        };
+        customRequestHandler = stub(
+          CustomRequestHandler,
+          'getInstance'
+        ).returns(mockCustomRequestHandler);
+        outgoingWsCustom = new OutgoingWebSocketWithMock(upstreamUrl, headers);
+        msgSpy = spy();
+        outgoingWsCustom.emit = msgSpy;
+        const msg = '{"id": "customRequestId"}';
+        outgoingWsCustom.errorHandler(msg);
+        assert(msgSpy.calledOnce);
+        assert(msgSpy.calledWith(kError, msg));
+      });
     });
   });
 
