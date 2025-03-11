@@ -25,9 +25,11 @@
   "homepage": "https://github.com/browserstack/ws-reconnect-proxy#readme",
   "dependencies": {
     "@vrbo/pino-rotating-file": "^3.0.0",
+    "dotenv": "^16.4.7",
     "pino": "^6.11.3",
     "pino-pretty": "^5.1.2",
     "uuid": "^8.3.2",
+    "wd": "^1.14.0",
     "ws": "^7.5.0"
   },
   "devDependencies": {
