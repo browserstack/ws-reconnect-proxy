@@ -1,5 +1,4 @@
 node_modules
 tmp/
-config.json
 .nyc_output
 logs/
