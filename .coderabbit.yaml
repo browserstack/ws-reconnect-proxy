@@ -1,0 +1,13 @@
+inheritance: true
+reviews:
+  review_details: true
+  request_changes_workflow: true
+  auto_review:
+    enabled: true
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "browserstack/browserstack-ai-harness:stacks/stack-domain-ws-reconnect-proxy/rules/**/*.md"
+      - "browserstack/browserstack-ai-harness:stacks/stack-domain-ws-reconnect-proxy/agents/*review*.md"
+      - "browserstack/browserstack-ai-harness:stacks/stack-domain-ws-reconnect-proxy/skills/*review*/**/*.md"
+      - "browserstack/browserstack-ai-harness:stacks/stack-domain-ws-reconnect-proxy/knowledge/*.md"
