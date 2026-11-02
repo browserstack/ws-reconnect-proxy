@@ -17,7 +17,7 @@ jobs:
     - uses: actions/setup-node@v2
       name: Setup Node.js
       with:
-        node-version: '14.17.5'
+        node-version: '24.22.1'
     - run: |
         cp lib/config/config.json.sample lib/config/config.json
       name: Setting up configuration
